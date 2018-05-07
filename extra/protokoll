@@ -1,0 +1,37 @@
+Funkprotokoll
+
+(in 6LoWPAN, in 15.4)
+
+Version 1.00 (2018-05-07)
+
+|- Offset (hex, byte)  
+|   |- Wert
+
+00  Erkennung (0xAC)
+
+01  Versionsnummer (0x01)
+
+02  Paketlänge (über alles)
+
+03  Nachrichtenart
+    most significant vier bits: typ
+    least significant vier bits: untertyp
+        0x1? DATA MESSAGE
+            0x11 temperatur
+            0x12 feuchtigkeit
+            0x19 wasserstand im eimer
+        0x2? reserviert für DATA REQUEST
+            (selbe untertypen wie 0x1?, nicht spezifiziert)
+        0x9? WARN
+            0x99 eimer leer
+            0x9a widerspruch feuchtigkeit
+        0xA? INFO
+            0xa9 eimer bald leer
+    alles andere: reserviert (paket verwerfen)
+
+04  Node ID (6LoWPAN-Adresse, 16 bits)
+    bei 0x1?: quelle der daten
+
+06  checksum (TBD)
+
+08..Data
