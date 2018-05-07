@@ -17,7 +17,7 @@ int readlight(int argc, char **argv) {
     (void) argv;
     
     saul_reg_t* dev = saul_reg_find_name("tcs37727");
-    printf("light: %p\n", dev);
+    printf("light: %p\n", (void*) dev);
 
     int dim;
     phydat_t res;
