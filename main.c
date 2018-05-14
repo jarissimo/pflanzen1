@@ -12,7 +12,9 @@
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 static const shell_command_t shell_commands[] = {
-    { NULL, NULL, NULL }
+    { "light", "read light data", read_light },
+    { "humidity", "read humidity data", read_humidity },
+    { NULL, NULL, NULL },
 };
 
 int main(void)
