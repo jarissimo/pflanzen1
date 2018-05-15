@@ -1,8 +1,9 @@
-Funkprotokoll
+Funkprotokoll H2O-Protokoll oder H2O
+------------------------------------
 
-(benutzt 6LoWPAN und 15.4)
+(benutzt 6LoWPAN und 802.15.4)
 
-Version 1.00 (2018-05-07)
+Version 1.0.1 (2018-05-14)
 
 Es wird big endian verwendet.
 
@@ -22,18 +23,21 @@ Es wird big endian verwendet.
             0x11 temperatur
             0x12 feuchtigkeit
             0x19 wasserstand im eimer
-        0x2? reserviert für DATA REQUEST
-            (selbe untertypen wie 0x1?, nicht spezifiziert)
+        0x2? reserviert für DATA REQUEST (noch nicht weiter spezifiziert)
+            (selbe untertypen wie 0x1?)
         0x9? WARN
             0x99 eimer leer
             0x9a widerspruch feuchtigkeit
+            0x9b sensor sendet keine daten
         0xA? INFO
             0xa9 eimer bald leer
     alles andere: reserviert (paket verwerfen)
 
 04  Node ID (6LoWPAN-Adresse, 16 bits)
     bei 0x1?: quelle der daten
+    bei 0x9b: sensor der keine daten sendet
 
-06  checksum (TBD)
+06  Checksum
+    CRC16-CCITT, berechnet über das gesamte Paket, dieses Feld dabei auf 0 gesetzt.
 
 08..Data
