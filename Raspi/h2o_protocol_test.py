@@ -4,7 +4,7 @@ from struct import *
 class Decoded_msg:
     pass
 
-H2O_MAGIC = 0x0C
+H2O_MAGIC = 0xAC
 H2O_VERSION = 0x01
 H2O_MSG_MAP=[
     ["DATA_MASK" , 0x10],
