@@ -15,7 +15,7 @@ static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 static const shell_command_t shell_commands[] = {
     { "light", "read light data", read_light },
     { "humidity", "read humidity data", read_humidity },
-    { "udp_dumpd", "start debug udp server that just prints data it receives", dump_server },
+    { "h2o_dumpd", "start debug h2o server that just prints data it receives", h2o_dump_server },
     { NULL, NULL, NULL },
 };
 

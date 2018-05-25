@@ -31,11 +31,10 @@ typedef struct {
 int rv; // generic declaration for return value (use locally only)
 
 void udp_server(uint16_t port, receive_handler handler) {
-    /* Create a UDP server.
-     * The server listens on the given port and
-     * each incoming message is passed on to handler().
+    /* Create a UDP server that calls the receive_handler for each incoming message.
      *
-     * handler() must accept two parameters:
+     * @param port: the port to listen at
+     * @param handler: the function to call. It must accept two parameters:
      * - a pointer to a memory area where the received data is stored.
      * - the length of this data.
      */
@@ -104,7 +103,7 @@ void h2op_debug_receive_handler ( char *buf, uint16_t packetlen ) {
     hexdump("Data", buf+H2OP_HEADER_LENGTH, (header->len)-H2OP_HEADER_LENGTH);
 }
 
-int dump_server ( int argc, char *argv[]) {
+int h2o_dump_server ( int argc, char *argv[]) {
     (void) argc;
     (void) argv;
 

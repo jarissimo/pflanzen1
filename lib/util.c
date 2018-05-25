@@ -1,5 +1,11 @@
 // from https://stackoverflow.com/a/7776146/196244 , slightly adapted
 void hexdump (char *desc, void *addr, int len) {
+    /* Print some data as a hexdump (like `hexdump -C`)
+     * @param desc: if not NULL, printed before the dump (plus colon and newline)
+     * @param addr: start address of the data to dump
+     * @param len: data length
+     */
+
     int i;
     unsigned char buff[17];
     unsigned char *pc = (unsigned char*)addr;
