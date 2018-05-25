@@ -76,9 +76,12 @@ void error(int status, int errnum, const char *format, ...) {
     fprintf(stderr, "error: ");
 
     if ( errnum != 0 ) {
+/* maybe use this again later conditionally on architecturess that have it
         char buf[1024];
         strerror_r(errnum, buf, 1024);
         fprintf(stderr, "%s: ", buf);
+*/
+        fprintf(stderr, "%d: ", errnum);
     }
 
     va_list argptr;
