@@ -100,6 +100,7 @@ USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_ipv6_default
 USEMODULE += gnrc_icmpv6_echo
 USEMODULE += gnrc_sock_udp
+USEMODULE += gnrc_txtsnd
 # saul
 USEMODULE += saul_default
 # utilities
