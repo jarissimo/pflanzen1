@@ -2,25 +2,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//Read Data and convert into Struct
-const int NumSensors = 5;
 
-const int A =20;
-const int B =15;
-const int C =10;
-const int D =5;
+#define NUM_SENSORS 5
+
+#define PUMP_THRESHOLD_VERYHIGH  20
+#define PUMP_THRESHOLD_HIGH  15
+#define PUMP_THRESHOLD_LOW  10
+#define PUMP_THRESHOLD_VERYLOW  5
 
 
  struct DataStruct
   {
       int id;
       int data;
-  } Datos;
+  } pump_data;
 int table [5][2];
-bool PumpeisON = false;
-void ResetTable( int table[][2]){
+bool pumpeisON = false;
+void resetTable( int table[][2]){
 
-	for (int i=0;i<NumSensors;i++){
+	for (int i=0;i<NUM_SENSORS;i++){
 		table[i][0]=0;
 		table[i][1]=0;
 	}
@@ -28,30 +28,30 @@ void ResetTable( int table[][2]){
 
 void printTable( int table[][2]){
 
-	for(int i=0;i<NumSensors;i++){
+	for(int i=0;i<NUM_SENSORS;i++){
 		printf("id: %d value: %d \n",table[i][0],table[i][1]);
 	}
 }
 
 
-bool mainPump(struct DataStruct Datos, bool PumpeisON){
+bool mainPump(struct DataStruct pump_data, bool pumpeisON){
 
-    int OpenPumpe = 0;
-    int ClosePumpe = 0;
-    int SumTemp = 0;
-    int AvgTemp = 0;
-    if (Datos.data  < D || Datos.data > A){
+    int openPumpe = 0;
+    int closePumpe = 0;
+    int sumHum = 0;
+    int avgHum = 0;
+    if (pump_data.data  < PUMP_THRESHOLD_VERYLOW || pump_data.data > PUMP_THRESHOLD_VERYHIGH){
 
-        if(Datos.data < D && !PumpeisON){
+        if(pump_data.data < PUMP_THRESHOLD_VERYLOW && !pumpeisON){
 		printf("OpenPumpe \n");
-		ResetTable(table);
-		PumpeisON = true;
+		resetTable(table);
+		pumpeisON = true;
             //send(OpenPumpe);
         }
 
-        if(Datos.data  > A && PumpeisON){
+        if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pumpeisON){
 	      printf("ClosePumpe");
-	      ResetTable(table);
+	      resetTable(table);
              //send(ClosePumpe);
         }
 
@@ -59,74 +59,77 @@ bool mainPump(struct DataStruct Datos, bool PumpeisON){
     }
 
     else{
-        bool RepitedData = false;
-        for(int i=0;i<NumSensors-1;i++){
+        bool repeatedData = false;
+        for(int i=0;i<NUM_SENSORS-1;i++){
 
-            if(table[i][0]==Datos.id){
-                RepitedData = true;
+            if(table[i][0]==pump_data.id){
+                repeatedData = true;
+		table[i][1] = pump_data.data;
+		printf("TableUpdated \n");
+		printTable(table);
             }
         }
-        if(!RepitedData){
+        if(!repeatedData){
 	    int aux=0;
 	    while(table[aux][0] != 0){
 		aux++;
 	    }
-            table[aux][0] = Datos.id;
-            table[aux][1] = Datos.data;
+            table[aux][0] = pump_data.id;
+            table[aux][1] = pump_data.data;
 	    printf("AddedToTable \n");
 	    printTable(table);
         }
 
 
-        if(table[NumSensors-1][0] != 0){
+        if(table[NUM_SENSORS-1][0] != 0){
 	    printf("ALL SENSORS SENDED THE DATA \n");
-            //AvgData
-            for(int i=0;i<NumSensors-1;i++){
-                SumTemp = SumTemp + table[i][1];
+            //AvgHum
+            for(int i=0;i<NUM_SENSORS-1;i++){
+                sumHum = sumHum + table[i][1];
             }
-            AvgTemp = SumTemp / NumSensors;
+            avgHum = sumHum / NUM_SENSORS;
 
-            if(AvgTemp < C && AvgTemp > D){
-                OpenPumpe=1;
+            if(avgHum < PUMP_THRESHOLD_LOW && avgHum > PUMP_THRESHOLD_VERYLOW){
+                openPumpe=1;
             }
 
-            if(AvgTemp < A && AvgTemp > B && PumpeisON){
-                ClosePumpe=1;
+            if(avgHum < PUMP_THRESHOLD_VERYHIGH && avgHum > PUMP_THRESHOLD_HIGH && pumpeisON){
+                closePumpe=1;
             }
-            ResetTable(table);
+            resetTable(table);
 
         }
-        if(OpenPumpe==1 && !PumpeisON){
+        if(openPumpe==1 && !pumpeisON){
 		printf("OPENPUMPE \n");
-		PumpeisON = true;
+		pumpeisON = true;
             //send(OpenPumpe);
             }
 
-        if(ClosePumpe==1 && PumpeisON){
+        if(closePumpe==1 && pumpeisON){
 	    	printf("CLOSEPUMPE \n");
-		PumpeisON = false;
+		pumpeisON = false;
             //send(ClosePumpe);
             }
     }
-return PumpeisON;
+return pumpeisON;
 }
 
 void main( int argc, char * argv[]){
 
-	Datos.id = strtol( argv[1],NULL,10);
-	Datos.data = strtol( argv[2],NULL,10);
-	bool PumpeState=false;
-	PumpeState = mainPump(Datos,PumpeState);
+	pump_data.id = strtol( argv[1],NULL,10);
+	pump_data.data = strtol( argv[2],NULL,10);
+	bool pumpeState=false;
+	pumpeState = mainPump(pump_data,pumpeState);
 	int identifier=1;
 	int datasensor=0;
 
-	while(Datos.id != 0){
+	while(pump_data.id != 0){
 		printf("introduce the data: ");
 		scanf("%d %d",&identifier,&datasensor);
-		Datos.id=identifier;
-		Datos.data=datasensor;
+		pump_data.id=identifier;
+		pump_data.data=datasensor;
 		printf("_____________________");
-		PumpeState = mainPump(Datos,PumpeState);
+		pumpeState = mainPump(pump_data,pumpeState);
 
 	}
 }
