@@ -11,6 +11,10 @@ CFLAGS += -DNODE_ROLE=\"$(ROLE)\"
 # If no BOARD is found in the environment, use this default:
 BOARD ?= native
 
+ifeq ($(USE_LIBC_ERRORH), 1)
+	CFLAGS += -DUSE_LIBC_ERRORH
+endif
+
 # This has to be the absolute path to the RIOT base directory:
 RIOTBASE ?= $(CURDIR)/RIOT
 
