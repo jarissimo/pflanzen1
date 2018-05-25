@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <stdarg.h>
+#include <unistd.h>
+
 // from https://stackoverflow.com/a/7776146/196244 , slightly adapted
 void hexdump (char *desc, void *addr, int len) {
     /* Print some data as a hexdump (like `hexdump -C`)
@@ -63,3 +67,29 @@ void hexdump (char *desc, void *addr, int len) {
     printf ("  %s\n", buff);
 }
 
+#ifdef USE_LIBC_ERRORH
+#include <error.h>
+#else
+void error(int status, int errnum, const char *format, ...) {
+    fflush(stdout);
+
+    fprintf(stderr, "error: ");
+
+    if ( errnum != 0 ) {
+        char buf[1024];
+        strerror_r(errnum, buf, 1024);
+        fprintf(stderr, "%s: ", buf);
+    }
+
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+
+    fprintf(stderr, "\n");
+    fflush(stderr);
+    if ( status != 0 ) {
+        _exit(status);
+    }
+}
+#endif // USE_LIBC_ERRORH

@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <error.h>
 
 #include "net/sock/udp.h"
 #include "net/ipv6/addr.h"
