@@ -8,6 +8,11 @@ ROLE ?= sensor
 #TODO error for invalid values
 CFLAGS += -DNODE_ROLE=\"$(ROLE)\"
 
+# RFC 4193. (prefix fd, random bytes 9c..af, subnet id ac01)
+IPV6_NETWORK ?= 0xfd9c5921b4afac01
+#XXX is this okay? is this safe? is this the best way to do this?
+CFLAGS += -DH2O_NETWORK_PREFIX="((uint64_t)$(IPV6_NETWORK))"
+
 # If no BOARD is found in the environment, use this default:
 BOARD ?= native
 

@@ -16,6 +16,7 @@ static const shell_command_t shell_commands[] = {
     { "light", "read light data", read_light },
     { "humidity", "read humidity data", read_humidity },
     { "h2o_dumpd", "start debug h2o server that just prints data it receives", h2o_dump_server },
+    { "h2o_send_data", "send data using the h2o protocol", h2o_send_data_shell },
     { NULL, NULL, NULL },
 };
 
