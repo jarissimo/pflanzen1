@@ -141,7 +141,6 @@ ssize_t h2op_send ( const nodeid_t recipient, H2OP_MSGTYPE type,
 
     ipv6_addr_t recipient_ip;
     h2op_nodeid_to_addr(recipient, &recipient_ip);
-    printf("to: "); ipv6_addr_print(&recipient_ip); puts("");
 
     //XXX: can this be written better (as a struct directly or something)?
     H2OP_HEADER *header = (H2OP_HEADER*) buf;
@@ -174,7 +173,7 @@ void h2op_debug_receive_handler ( uint8_t *buf, uint16_t packetlen ) {
         return;
     }
     if ( header->version != H2OP_VERSION ) {
-        error(0,0, "invalid version (got 0x%02X, want 0x01)", header->version);
+        error(0,0, "unknown version (got 0x%02X, want 0x01)", header->version);
         return;
     }
 
