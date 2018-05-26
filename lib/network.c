@@ -13,11 +13,7 @@
 #define SERVER_MSG_QUEUE_SIZE (8)
 #define SERVER_BUFFER_SIZE (128) // 802.15.4's mtu plus one to add a null byte
 
-static sock_udp_t sock;
-static char server_buffer[SERVER_BUFFER_SIZE];
-static msg_t server_msg_queue[SERVER_MSG_QUEUE_SIZE];
-
-typedef void (*receive_handler) (char* buf, uint16_t buflen);
+typedef void (*receive_handler) (uint8_t* buf, uint16_t buflen);
 typedef uint16_t nodeid_t;
 
 #define H2OP_PORT (44555)
@@ -66,6 +62,9 @@ void udp_server(uint16_t port, receive_handler handler) {
      * - a pointer to a memory area where the received data is stored.
      * - the length of this data.
      */
+    static sock_udp_t sock;
+    static uint8_t server_buffer[SERVER_BUFFER_SIZE];
+    static msg_t server_msg_queue[SERVER_MSG_QUEUE_SIZE];
 
     sock_udp_ep_t server = { .port = port, .family = AF_INET6, };
     msg_init_queue(server_msg_queue, SERVER_MSG_QUEUE_SIZE);
@@ -153,7 +152,7 @@ ssize_t h2op_send ( const nodeid_t recipient, H2OP_MSGTYPE type,
     header->node = source;
     header->crc = 0;
     memcpy(buf+H2OP_HEADER_LENGTH, data, len);
-    crc16_ccitt_calc(buf, H2OP_HEADER_LENGTH+len);
+    header->crc = crc16_ccitt_calc(buf, H2OP_HEADER_LENGTH+len);
 
     h2op_header_hton(header);
     rv = udp_send(&recipient_ip, H2OP_PORT, buf, buflen);
@@ -161,7 +160,7 @@ ssize_t h2op_send ( const nodeid_t recipient, H2OP_MSGTYPE type,
     return rv;
 }
 
-void h2op_debug_receive_handler ( char *buf, uint16_t packetlen ) {
+void h2op_debug_receive_handler ( uint8_t *buf, uint16_t packetlen ) {
     /* print contents of h2op package to stdout */
     if ( packetlen < H2OP_HEADER_LENGTH ) {
         error(0,0, "invalid packet received: length < %u", H2OP_HEADER_LENGTH);
@@ -178,7 +177,15 @@ void h2op_debug_receive_handler ( char *buf, uint16_t packetlen ) {
         error(0,0, "invalid version (got 0x%02X, want 0x01)", header->version);
         return;
     }
-    // TODO check crc
+
+    uint16_t crc_want = header->crc;
+    header->crc = 0;
+    uint16_t crc_have = crc16_ccitt_calc(buf, packetlen);
+    if ( crc_want != crc_have ) {
+        error(0,0, "crc mismatch (got 0x%04X, calculated 0x%04X)", crc_want, crc_have);
+        return;
+    }
+
     if ( packetlen < header->len ) {
         error(0,0, "packet length (%u) < length field in header (%u)",
               packetlen, header->len);
@@ -199,7 +206,7 @@ int h2o_dump_server ( int argc, char *argv[]) {
     (void) argv;
 
     puts("Starting Server. Example usage:");
-    puts("printf '\\xac\\x01\\x0c\\x00\\x12\\x34\\x00\\x00DATA' "
+    puts("printf '\\xac\\x01\\x0c\\x00\\x12\\x34\\x4e\\x67DATA' "
          "| nc -6u ff02::1%tapbr0 44555");
 
     udp_server(H2OP_PORT, &h2op_debug_receive_handler);
