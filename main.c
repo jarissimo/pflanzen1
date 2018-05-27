@@ -8,15 +8,19 @@
 #include "lib/network.c"
 #include "lib/pump.c"
 #include "lib/sensor.h"
+#include "lib/sensor_thread.c"
 #include "lib/util.c"
 #include "lib/global.c"
+
+/* stack containing all started stacks */
+char thread_stack[THREAD_STACKSIZE_MAIN];
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 static const shell_command_t shell_commands[] = {
-    { "light", "read light data", read_light },
-    { "humidity", "read humidity data", read_humidity },
+    { "light", "read light data", read_light_shell },
+    { "humidity", "read humidity data", read_humidity_shell },
     { "h2od", "start h2o server", h2o_server },
     { "h2od_debug", "turn h2od debug prints on and off", shell_h2od_debug },
     { "pump_set_data", "Send data to the pump controller", shell_pump_set_data },
@@ -49,6 +53,10 @@ int main(void)
 #endif
 
     initialize_sensors();
+    thread_create(thread_stack, sizeof(thread_stack),
+                  THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
+                  sensor_thread, NULL, "sensor_thread");
+
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
 
