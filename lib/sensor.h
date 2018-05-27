@@ -24,7 +24,9 @@
 
 int initialize_sensors(void);
 
-int read_humidity(int argc, char **argv);
+int read_humidity(void);
+int read_humidity_shell(int argc, char **argv);
 
-int read_light(int argc, char **argv);
+int read_light(void);
+int read_light_shell(int argc, char **argv);
 

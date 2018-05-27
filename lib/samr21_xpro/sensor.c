@@ -50,23 +50,36 @@ int initialize_sensors(void) {
 }
 
 
-int read_humidity(int argc, char **argv) {
-    
-    (void) argc;
-    (void) argv;
+int read_humidity(void) {
     
     gpio_set(GPIO_POWER);
     xtimer_sleep(ADC_SLEEP1);
 
     int value = adc_sample(ADC_USED_LINE, RES);
-    printf("Value: ADC_%i: %4i\n", ADC_USED_LINE, value);
     xtimer_sleep(ADC_SLEEP2);
     gpio_clear(GPIO_POWER);
+
+    return value;
+}
+
+int read_humidity_shell(int argc, char **argv) {
+    
+    (void) argc;
+    (void) argv;
+
+    int value = read_humidity();
+    printf("Value: %4i\n", value);
 
     return 0;
 }
 
-int read_light(int argc, char **argv) {
+int read_light(void) {
+
+    error(-1, 0, "Sensor not present or read light not implemented for this board.");    
+    return -1;
+}
+
+int read_light_shell(int argc, char **argv) {
 
     (void) argc;
     (void) argv;
@@ -74,5 +87,3 @@ int read_light(int argc, char **argv) {
     error(-1, 0, "Sensor not present or read light not implemented for this board.");    
     return -1;
 }
-
-

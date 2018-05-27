@@ -47,7 +47,16 @@ int read_sensor(char *sensor_name) {
 }
 
 
-int read_humidity(int argc, char **argv) {
+int read_humidity() {
+  (void) argc;
+  (void) argv;
+
+  read_sensor("hdc1000");
+  return 0;
+}
+
+
+int read_humidity_shell() {
   (void) argc;
   (void) argv;
 
@@ -63,4 +72,10 @@ int read_light(int argc, char **argv) {
   return 0;
 }
 
+int read_light_shell(int argc, char **argv) {
+  (void) argc;
+  (void) argv;
 
+  read_sensor("tcs37727");
+  return 0;
+}
