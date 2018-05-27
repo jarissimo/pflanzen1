@@ -48,7 +48,7 @@ int main(void)
     h2op_add_receive_hook(h2op_pump_set_data_hook);
 #endif
 
-
+    initialize_sensors();
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
 
