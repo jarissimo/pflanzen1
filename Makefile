@@ -10,8 +10,24 @@ APPLICATION = Pflanzen1
 # * sensor:		node that collects data fom attached sensors and forwards it
 # * collector:  node that collects sensor data, forwards it to the gateway, and
 #   		    controls the pump)
+BOARD ?= native
+
+ifeq ($(BOARD),native)
+    BOARD_TYPE = 1
+endif
+ifeq ($(BOARD),samr21-xpro)
+    BOARD_TYPE = 2
+endif
+ifeq ($(BOARD),pba-d-01-kw2x)
+    BOARD_TYPE = 3
+endif
+
+CFLAGS += -DBOARD_TYPE=\"$(BOARD_TYPE)\"
+
 ROLE ?= sensor
+
 #TODO error for invalid values
+
 CFLAGS += -DNODE_ROLE=\"$(ROLE)\"
 CFLAGS += -DNODE_ROLE_"$(shell echo $(ROLE) | tr a-z A-Z)"
 
@@ -105,6 +121,10 @@ USEMODULE += gnrc_txtsnd
 USEMODULE += saul_default
 # utilities
 USEMODULE += checksum
+
+
+USEMODULE += xtimer
+FEATURES_REQUIRED = periph_adc
 
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the

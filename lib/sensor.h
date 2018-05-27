@@ -14,7 +14,15 @@
 /* #error */
 /* #endif */
 
-int read_sensor(char *sensor_name);
+#if BOARD_TYPE == 1
+#include "native/sensor.c"
+#elif BOARD_TYPE == 2
+#include "samr21_xpro/sensor.c"
+#elif BOARD_TYPE == 3
+#include "pba_d_01_kw2x/sensor.c"
+#endif
+
+int initialize_sensors(void);
 
 int read_humidity(int argc, char **argv);
 

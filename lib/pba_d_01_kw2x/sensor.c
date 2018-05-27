@@ -7,6 +7,10 @@
 #include "saul.h"
 #include "saul_reg.h"
 
+int initialize_sensors(void) {
+    puts("Nothing to do to initialize sensors ...[ok].");
+    return 1;
+}
 
 int read_sensor(char *sensor_name) {
 
