@@ -5,6 +5,12 @@
 //Number of sensors
 #define NUM_SENSORS 5
 
+//ID of the water level sensor
+#define ID_WATER_LEVEL_SENSOR 6
+
+//Lowest Humidicity level accepted for the water level sensor
+#define HUMIDICITY_LEVEL_ACCEPTED 5
+
 //Border values for the sensors we should edit the values
 #define PUMP_THRESHOLD_VERYHIGH  20
 #define PUMP_THRESHOLD_HIGH  15
@@ -49,6 +55,20 @@ bool pump_set_data(struct DataStruct pump_data, bool pumpe_is_on)
     int close_pumpe = 0;
     int sum_hum = 0;
     int avg_hum = 0;
+
+    if(pump_data.id == ID_WATER_LEVEL_SENSOR && pump_data.data < HUMIDICITY_LEVEL_ACCEPTED)
+    {
+	if(pumpe_is_on){
+		printf("ClosePumpe \n");
+		printf("Need to be filled");
+	}
+
+	else{
+		printf("Need to be filled");
+	}
+
+    }
+
     if (pump_data.data  < PUMP_THRESHOLD_VERYLOW || pump_data.data > PUMP_THRESHOLD_VERYHIGH){
 
         if(pump_data.data < PUMP_THRESHOLD_VERYLOW && !pumpe_is_on){
