@@ -46,6 +46,8 @@ USEMODULE += gnrc_icmpv6_echo
 USEMODULE += gnrc_sock_udp
 # saul
 USEMODULE += saul_default
+# utilities
+USEMODULE += checksum
 
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the

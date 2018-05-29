@@ -3,8 +3,6 @@
 #include <string.h>
 
 #include "checksum/crc16_ccitt.h"
-// XXX I'm pretty sure that's not the way to do this but how do I do this
-#include "../RIOT/sys/checksum/crc16_ccitt.c"
 #include "net/sock/udp.h"
 #include "net/ipv6/addr.h"
 
