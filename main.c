@@ -18,7 +18,7 @@ static const shell_command_t shell_commands[] = {
     { "h2o_dumpd", "start debug h2o server that just prints data it receives", h2o_dump_server },
     { "pump_set_data", "Send data to the pump controller", shell_pump_set_data },
     { NULL, NULL, NULL },
-1};
+};
 
 int main(void)
 {

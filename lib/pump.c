@@ -128,13 +128,13 @@ bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
             reset_table(table);
 
         }
-        if(open_pump==1 && !pumpe_is_on){
+        if(open_pump==1 && !pump_is_on){
             printf("OPENPUMPE \n");
             pump_is_on = true;
             //Here we should call the functions that opens the pump
         }
 
-        if(close_pump==1 && pumpe_is_on){
+        if(close_pump==1 && pump_is_on){
             printf("CLOSEPUMPE \n");
             pump_is_on = false;
             //Here we should call the functions that closes the pump
@@ -146,7 +146,7 @@ bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
 int shell_pump_set_data( int argc, char * argv[])
 {
     //TODO We should change this insted of keyboard parameters, a functions should send the values
-    if ( argc < 2 ) {
+    if ( argc < 3 ) {
         printf("Usage: %s pump_id data_value\n", argv[0]);
         return 1;
     }
@@ -154,6 +154,6 @@ int shell_pump_set_data( int argc, char * argv[])
     pump_data.id = strtol( argv[1],NULL,10);
     pump_data.data = strtol( argv[2],NULL,10);
     static bool pump_state=false;
-    pump_state = pump_set_data(pump_data,pumpe_state);
+    pump_state = pump_set_data(pump_data,pump_state);
     return 0;
 }
