@@ -18,15 +18,15 @@
 #define PUMP_THRESHOLD_VERYLOW  5
 
 //Struct that stores id of the sensors and humidity value
-struct DataStruct
+struct PumpDataStruct
 {
     int id;
     int data;
 } pump_data;
 
 //Table to storage sensors data the size of the table depens on the number of sensors
-int table [5][2];
-bool pumpe_is_on = false;
+int table [NUM_SENSORS][2];
+bool pump_is_on = false;
 
 //Each time we open/close the pump we should reset the table values
 void reset_table( int table[][2])
@@ -46,16 +46,17 @@ void print_table( int table[][2])
 }
 
 
-bool pump_set_data(struct DataStruct pump_data, bool pumpe_is_on)
+//TODO: I would say pump_is_on should be global, not a parameter to this. --marian
+bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
 {
-    int open_pumpe = 0;
-    int close_pumpe = 0;
+    int open_pump = 0;
+    int close_pump = 0;
     int sum_hum = 0;
     int avg_hum = 0;
 
     if(pump_data.id == ID_WATER_LEVEL_SENSOR && pump_data.data < HUMIDICITY_LEVEL_ACCEPTED)
     {
-        if(pumpe_is_on){
+        if(pump_is_on){
             printf("ClosePumpe \n");
             printf("Need to be filled");
         }
@@ -68,17 +69,17 @@ bool pump_set_data(struct DataStruct pump_data, bool pumpe_is_on)
 
     if (pump_data.data  < PUMP_THRESHOLD_VERYLOW || pump_data.data > PUMP_THRESHOLD_VERYHIGH){
 
-        if(pump_data.data < PUMP_THRESHOLD_VERYLOW && !pumpe_is_on){
+        if(pump_data.data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
             printf("OpenPumpe \n");
             reset_table(table);
-            pumpe_is_on = true;
-            //Here we should call the function that opens the pumpe
+            pump_is_on = true;
+            //Here we should call the function that opens the pump
         }
 
-        if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pumpe_is_on) {
+        if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pump_is_on) {
             printf("ClosePumpe");
             reset_table(table);
-            //Here we should call the function that closes the pumpe
+            //Here we should call the function that closes the pump
         }
 
 
@@ -118,28 +119,28 @@ bool pump_set_data(struct DataStruct pump_data, bool pumpe_is_on)
             avg_hum = sum_hum / NUM_SENSORS;
 
             if(avg_hum < PUMP_THRESHOLD_LOW && avg_hum > PUMP_THRESHOLD_VERYLOW){
-                open_pumpe=1;
+                open_pump=1;
             }
 
-            if(avg_hum < PUMP_THRESHOLD_VERYHIGH && avg_hum > PUMP_THRESHOLD_HIGH && pumpe_is_on){
-                close_pumpe=1;
+            if(avg_hum < PUMP_THRESHOLD_VERYHIGH && avg_hum > PUMP_THRESHOLD_HIGH && pump_is_on){
+                close_pump=1;
             }
             reset_table(table);
 
         }
-        if(open_pumpe==1 && !pumpe_is_on){
+        if(open_pump==1 && !pumpe_is_on){
             printf("OPENPUMPE \n");
-            pumpe_is_on = true;
-            //Here we should call the functions that opens the pumpe
+            pump_is_on = true;
+            //Here we should call the functions that opens the pump
         }
 
-        if(close_pumpe==1 && pumpe_is_on){
+        if(close_pump==1 && pumpe_is_on){
             printf("CLOSEPUMPE \n");
-            pumpe_is_on = false;
-            //Here we should call the functions that closes the pumpe
+            pump_is_on = false;
+            //Here we should call the functions that closes the pump
         }
     }
-    return pumpe_is_on;
+    return pump_is_on;
 }
 
 int shell_pump_set_data( int argc, char * argv[])
@@ -152,7 +153,7 @@ int shell_pump_set_data( int argc, char * argv[])
 
     pump_data.id = strtol( argv[1],NULL,10);
     pump_data.data = strtol( argv[2],NULL,10);
-    static bool pumpe_state=false;
-    pumpe_state = pump_set_data(pump_data,pumpe_state);
+    static bool pump_state=false;
+    pump_state = pump_set_data(pump_data,pumpe_state);
     return 0;
 }
