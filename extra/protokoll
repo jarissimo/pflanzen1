@@ -1,39 +1,54 @@
-Funkprotokoll
+The H2O Protocol
+================
 
-(benutzt 6LoWPAN und 15.4)
+Version 1.0.2 (2018-05-25)
 
-Version 1.00 (2018-05-07)
+General Information:
+* All multibyte fields use network byte order (big endian).
+* The protocol is designed to use UDP on 6LoWPAN on IEEE 802.15.4
+* The standard port we use is 44555.
 
-Es wird big endian verwendet.
+Header format
+-------------
 
 |- Offset (hex, in bytes)
-|   |- Wert
+|   |- Length in bytes
+|   |   |-
 
-00  Erkennung (0xAC)
+00  1   Magic Number (0xAC)
+        on mismatch, the packet MUST be discarded
 
-01  Versionsnummer (0x01)
+01  1   Version (currently 0x01)
+        on mismatch, the packet MUST be discarded
 
-02  Paketlänge (über alles)
+02  1   Length (including both header and data)
+        if this is longer than the udp payload, the packet MUST be discarded
 
-03  Nachrichtenart
-    most significant vier bits: typ
-    least significant vier bits: untertyp
-        0x1? DATA MESSAGE
-            0x11 temperatur
-            0x12 feuchtigkeit
-            0x19 wasserstand im eimer
-        0x2? reserviert für DATA REQUEST
-            (selbe untertypen wie 0x1?, nicht spezifiziert)
-        0x9? WARN
-            0x99 eimer leer
-            0x9a widerspruch feuchtigkeit
-        0xA? INFO
-            0xa9 eimer bald leer
-    alles andere: reserviert (paket verwerfen)
+03  1   Message Type
+        most significant four bits: supertype
+        least significant vier bits: subtype
+            0x1? DATA MESSAGE
+                0x11 temperature
+                0x12 humidity
+                0x19 water level in pump bucket
+            0x2? reserved for DATA REQUEST (not yet specified)
+                (same subtypes as in 0x1?)
+            0x9? WARN
+                0x99 pump bucket empty
+                0x9a contradictory humidity values encountered
+                0x9b sensor doesn't send data
+            0xA? INFO
+                0xa9 pump bucket nearly empty
+        all other values:
+            reserved for later use. packet MUST be discarded.
 
-04  Node ID (6LoWPAN-Adresse, 16 bits)
-    bei 0x1?: quelle der daten
+04  2   Node ID (6LoWPAN Adress, 16 bits)
+        signification depends on the `message type` field:
+            0x1?: data source
+            0x9b: sensor that doesn't send data
 
-06  checksum (TBD)
+06  2   Checksum
+        CRC16-CCITT, calculated over the complete packet (this field set to 0)
+        on mismatch, the packet must be discarded
 
-08..Data
+08  *   Data (* length = remainder of packet; that is, value of the length field minus the header length)
