@@ -12,6 +12,7 @@
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 static const shell_command_t shell_commands[] = {
+    { "pump_set_data", "Send data to the pump controller", shell_pump_set_data },
     { NULL, NULL, NULL }
 };
 

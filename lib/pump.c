@@ -145,23 +145,17 @@ bool pump_set_data(struct DataStruct pump_data, bool pumpe_is_on)
 return pumpe_is_on;
 }
 
-void shell_pump_set_data( int argc, char * argv[])
+int shell_pump_set_data( int argc, char * argv[])
 {
-	//We should change this insted of keyboard parameters, a functions should send the values
+	//TODO We should change this insted of keyboard parameters, a functions should send the values
+    if ( argc < 2 ) {
+        printf("Usage: %s pump_id data_value\n", argv[0]);
+        return 1;
+    }
+
 	pump_data.id = strtol( argv[1],NULL,10);
 	pump_data.data = strtol( argv[2],NULL,10);
-	bool pumpe_state=false;
+	static bool pumpe_state=false;
 	pumpe_state = pump_set_data(pump_data,pumpe_state);
-	int identifier=1;
-	int data_sensor=0;
-
-	while(pump_data.id != 0){
-		printf("introduce the data: ");
-		scanf("%d %d",&identifier,&data_sensor);
-		pump_data.id=identifier;
-		pump_data.data=data_sensor;
-		printf("_____________________");
-		pumpe_state = pump_set_data(pump_data,pumpe_state);
-
-	}
+    return 0;
 }
