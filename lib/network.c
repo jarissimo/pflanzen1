@@ -8,9 +8,6 @@
 
 #include "util.h"
 
-#define SERVER_MSG_QUEUE_SIZE (8)
-#define SERVER_BUFFER_SIZE (128) // 802.15.4's mtu plus one to add a null byte
-
 typedef void (*receive_handler) (uint8_t* buf, uint16_t buflen);
 typedef uint16_t nodeid_t;
 
@@ -32,7 +29,11 @@ typedef struct {
     uint16_t crc;
 } H2OP_HEADER;
 #pragma pack(pop)
-static size_t H2OP_HEADER_LENGTH = sizeof(H2OP_HEADER);
+#define H2OP_HEADER_LENGTH (sizeof(H2OP_HEADER))
+#define H2OP_MAX_LENGTH (127) // 802.15.4's mtu
+
+#define SERVER_MSG_QUEUE_SIZE (8)
+#define SERVER_BUFFER_SIZE (H2OP_MAX_LENGTH)
 
 void h2op_nodeid_to_addr ( nodeid_t nodeid, ipv6_addr_t *addr) {
     switch(nodeid) {
@@ -78,7 +79,7 @@ void udp_server(uint16_t port, receive_handler handler) {
         int res;
 
         //TODO: store sender address
-        res = sock_udp_recv(&sock, server_buffer, sizeof(server_buffer)-1,
+        res = sock_udp_recv(&sock, server_buffer, sizeof(server_buffer),
                             SOCK_NO_TIMEOUT, NULL);
         if ( res < 0 ) {
             error(0, -res, "Error while receiving");
@@ -130,30 +131,31 @@ ssize_t h2op_send ( const nodeid_t recipient, H2OP_MSGTYPE type,
      * @param len: length of data
      * @param source: node id of data source
      */
+#pragma pack(push, 1)
+    struct {
+        H2OP_HEADER header;
+        uint8_t data[H2OP_MAX_LENGTH-H2OP_HEADER_LENGTH];
+    } buf;
+#pragma pack(pop)
     size_t buflen = H2OP_HEADER_LENGTH + len;
-    uint8_t *buf = malloc(buflen);
-    if ( buf == NULL ) {
-        error(0, errno, "Error while sending: Could not allocate memory");
-        return -ENOMEM;
-    }
 
     ipv6_addr_t recipient_ip;
     h2op_nodeid_to_addr(recipient, &recipient_ip);
 
-    //XXX: can this be written better (as a struct directly or something)?
-    H2OP_HEADER *header = (H2OP_HEADER*) buf;
-    header->magic = H2OP_MAGIC;
-    header->version = H2OP_VERSION;
-    header->len = H2OP_HEADER_LENGTH+len;
-    header->type = type;
-    header->node = source;
-    header->crc = 0;
-    memcpy(buf+H2OP_HEADER_LENGTH, data, len);
-    header->crc = crc16_ccitt_calc(buf, H2OP_HEADER_LENGTH+len);
+    buf.header = (H2OP_HEADER) {
+        .magic = H2OP_MAGIC,
+        .version = H2OP_VERSION,
+        .len = H2OP_HEADER_LENGTH+len,
+        .type = type,
+        .node = source,
+        .crc = 0,
+    };
+    memcpy(buf.data, data, len);
+    buf.header.crc = crc16_ccitt_calc((uint8_t*) &buf, buflen);
 
-    h2op_header_hton(header);
-    rv = udp_send(&recipient_ip, H2OP_PORT, buf, buflen);
-    free(buf);
+    h2op_header_hton(&buf.header);
+    rv = udp_send(&recipient_ip, H2OP_PORT, (uint8_t*) &buf, buflen);
+    printf("%d bytes sent to ", rv); ipv6_addr_print(&recipient_ip); putchar('\n');
     return rv;
 }
 
@@ -179,7 +181,8 @@ void h2op_debug_receive_handler ( uint8_t *buf, uint16_t packetlen ) {
     header->crc = 0;
     uint16_t crc_have = crc16_ccitt_calc(buf, packetlen);
     if ( crc_want != crc_have ) {
-        error(0,0, "crc mismatch (got 0x%04X, calculated 0x%04X)", crc_want, crc_have);
+        error(0,0, "crc mismatch (got 0x%04X, calculated 0x%04X)",
+              crc_want, crc_have);
         return;
     }
 
