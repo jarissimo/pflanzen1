@@ -81,28 +81,29 @@ void pump_set_data(struct PumpDataStruct pump_data)
 
     }
 
-    if (pump_data.data  < PUMP_THRESHOLD_VERYLOW || pump_data.data > PUMP_THRESHOLD_VERYHIGH){
+    else {
+
+	if (pump_data.data  < PUMP_THRESHOLD_VERYLOW || pump_data.data > PUMP_THRESHOLD_VERYHIGH){
 
         if(pump_data.data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
             make_pump_open();
             reset_table(table);
             pump_is_on = true;
-            
+
         }
 
-        if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pump_is_on) {
+        else if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pump_is_on) {
             make_pump_close();
             reset_table(table);
-           
+	    pump_is_on = false;
         }
 
 
-    }
+    	else{
 
-    else {
-        bool repeated_data = false;
+       	 bool repeated_data = false;
 	//If the sensor is already present in the table we update his value if not we add it to the table
-        for(int i=0;i<NUM_SENSORS-1;i++) {
+        for(int i=0;i<NUM_SENSORS;i++) {
 
             if(table[i][0]==pump_data.id){
                 repeated_data = true;
@@ -122,12 +123,13 @@ void pump_set_data(struct PumpDataStruct pump_data)
             printf("AddedToTable \n");
             print_table(table);
         }
-
+	}
+     }
 	//When we got the values of all the sensors we operate with the values
         if(table[NUM_SENSORS-1][0] != 0){
             printf("ALL SENSORS SENDED THE DATA \n");
             //Calculate the AvgHum
-            for(int i=0;i<NUM_SENSORS-1;i++){
+            for(int i=0;i<NUM_SENSORS;i++){
                 sum_hum = sum_hum + table[i][1];
             }
             avg_hum = sum_hum / NUM_SENSORS;
@@ -144,14 +146,13 @@ void pump_set_data(struct PumpDataStruct pump_data)
         }
         if(open_pump==1 && !pump_is_on){
             make_pump_open();
-            pump_is_on = true;
-          
+            pump_is_on = true; 
         }
 
         if(close_pump==1 && pump_is_on){
             make_pump_close();
             pump_is_on = false;
-           
+
         }
     }
 }
