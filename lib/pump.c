@@ -61,7 +61,7 @@ printf("CLOSE PUMP \n");
 
 
 //TODO: I would say pump_is_on should be global, not a parameter to this. --marian
-bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
+void pump_set_data(struct PumpDataStruct pump_data)
 {
     int open_pump = 0;
     int close_pump = 0;
@@ -154,7 +154,6 @@ bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
             //Here we should call the functions that closes the pump
         }
     }
-    return pump_is_on;
 }
 
 int shell_pump_set_data( int argc, char * argv[])
@@ -167,7 +166,6 @@ int shell_pump_set_data( int argc, char * argv[])
 
     pump_data.id = strtol( argv[1],NULL,10);
     pump_data.data = strtol( argv[2],NULL,10);
-    static bool pump_state=false;
-    pump_state = pump_set_data(pump_data,pumpe_state);
+    pump_set_data(pump_data);
     return 0;
 }
