@@ -6,10 +6,10 @@
 #include "net/sock/udp.h"
 #include "net/ipv6/addr.h"
 
+#include "global.c"
 #include "util.h"
 
 typedef void (*receive_handler) (uint8_t* buf, uint16_t buflen);
-typedef uint16_t nodeid_t;
 
 #define H2OP_PORT (44555)
 #define H2OP_MAGIC (0xAC)
@@ -215,11 +215,16 @@ int h2o_dump_server ( int argc, char *argv[]) {
 
 int h2o_send_data_shell ( int argc, char *argv[]) {
     if ( argc != 5 ) {
-        printf("Usage: %s from(nodeid) to(nodeid) "
+        printf("Usage: %s [from(nodeid)|-(=self)] [to(nodeid)|ffff(broadcast)] "
              "[temperature|humidity] value(0..255)\n", argv[0]);
         return 1;
     }
-    nodeid_t from = strtoul(argv[1], NULL, 16);
+    nodeid_t from;
+    if ( strcmp(argv[1], "-") == 0 ) {
+        from = NODE_ID;
+    } else {
+        from = strtoul(argv[1], NULL, 16);
+    }
     nodeid_t to = strtoul(argv[2], NULL, 16);
     int16_t value = strtol(argv[4], NULL, 10);
 

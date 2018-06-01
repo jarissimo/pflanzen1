@@ -8,6 +8,17 @@ ROLE ?= sensor
 #TODO error for invalid values
 CFLAGS += -DNODE_ROLE=\"$(ROLE)\"
 
+ifeq ($(ROLE), collector)
+	NODE_ID ?= ff01
+else
+	NODE_ID ?= random
+endif
+ifeq ($(NODE_ID), random)
+	CFLAGS += -DNODE_ID_RANDOM
+else
+	CFLAGS += -DNODE_ID_="(0x$(NODE_ID))"
+endif
+
 # RFC 4193. (prefix fd, random bytes 9c..af, subnet id ac01)
 IPV6_NETWORK ?= 0xfd9c5921b4afac01
 #XXX is this okay? is this safe? is this the best way to do this?
