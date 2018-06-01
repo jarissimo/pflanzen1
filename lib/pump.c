@@ -87,13 +87,13 @@ void pump_set_data(struct PumpDataStruct pump_data)
             make_pump_open();
             reset_table(table);
             pump_is_on = true;
-            //Here we should call the function that opens the pump
+            
         }
 
         if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pump_is_on) {
             make_pump_close();
             reset_table(table);
-            //Here we should call the function that closes the pump
+            
         }
 
 
@@ -145,13 +145,13 @@ void pump_set_data(struct PumpDataStruct pump_data)
         if(open_pump==1 && !pumpe_is_on){
             make_pump_open();
             pump_is_on = true;
-            //Here we should call the functions that opens the pump
+            
         }
 
         if(close_pump==1 && pumpe_is_on){
             make_pump_close();
             pump_is_on = false;
-            //Here we should call the functions that closes the pump
+            
         }
     }
 }
