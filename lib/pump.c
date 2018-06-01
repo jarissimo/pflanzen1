@@ -45,6 +45,20 @@ void print_table( int table[][2])
 	}
 }
 
+//Function that activates the USB Port of the board
+void make_pump_open()
+{
+
+printf("OPEN PUMP \n");
+}
+
+//Function that shutdown the USB Port of the board
+void make_pump_close()
+{
+
+printf("CLOSE PUMP \n");
+}
+
 
 //TODO: I would say pump_is_on should be global, not a parameter to this. --marian
 bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
@@ -57,7 +71,7 @@ bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
     if(pump_data.id == ID_WATER_LEVEL_SENSOR && pump_data.data < HUMIDICITY_LEVEL_ACCEPTED)
     {
         if(pump_is_on){
-            printf("ClosePumpe \n");
+            make_pump_close();
             printf("Need to be filled");
         }
 
@@ -70,14 +84,14 @@ bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
     if (pump_data.data  < PUMP_THRESHOLD_VERYLOW || pump_data.data > PUMP_THRESHOLD_VERYHIGH){
 
         if(pump_data.data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
-            printf("OpenPumpe \n");
+            make_pump_open();
             reset_table(table);
             pump_is_on = true;
             //Here we should call the function that opens the pump
         }
 
         if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pump_is_on) {
-            printf("ClosePumpe");
+            make_pump_close();
             reset_table(table);
             //Here we should call the function that closes the pump
         }
@@ -129,13 +143,13 @@ bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
 
         }
         if(open_pump==1 && !pumpe_is_on){
-            printf("OPENPUMPE \n");
+            make_pump_open();
             pump_is_on = true;
             //Here we should call the functions that opens the pump
         }
 
         if(close_pump==1 && pumpe_is_on){
-            printf("CLOSEPUMPE \n");
+            make_pump_close();
             pump_is_on = false;
             //Here we should call the functions that closes the pump
         }
