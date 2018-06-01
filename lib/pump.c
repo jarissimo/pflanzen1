@@ -46,14 +46,14 @@ void print_table( int table[][2])
 }
 
 //Function that activates the USB Port of the board
-void make_pump_open()
+void make_pump_open(void)
 {
 
 printf("OPEN PUMP \n");
 }
 
 //Function that shutdown the USB Port of the board
-void make_pump_close()
+void make_pump_close(void)
 {
 
 printf("CLOSE PUMP \n");
@@ -93,7 +93,7 @@ void pump_set_data(struct PumpDataStruct pump_data)
         if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pump_is_on) {
             make_pump_close();
             reset_table(table);
-            
+           
         }
 
 
@@ -142,16 +142,16 @@ void pump_set_data(struct PumpDataStruct pump_data)
             reset_table(table);
 
         }
-        if(open_pump==1 && !pumpe_is_on){
+        if(open_pump==1 && !pump_is_on){
             make_pump_open();
             pump_is_on = true;
-            
+          
         }
 
-        if(close_pump==1 && pumpe_is_on){
+        if(close_pump==1 && pump_is_on){
             make_pump_close();
             pump_is_on = false;
-            
+           
         }
     }
 }
