@@ -114,12 +114,10 @@ ssize_t udp_send ( const ipv6_addr_t *recipient, uint16_t port,
 
 void h2op_header_hton ( H2OP_HEADER *header ) {
     header->node = htons(header->node);
-    header->crc = htons(header->crc);
 }
 
 void h2op_header_ntoh ( H2OP_HEADER *header ) {
     header->node = ntohs(header->node);
-    header->crc = ntohs(header->crc);
 }
 
 ssize_t h2op_send ( const nodeid_t recipient, H2OP_MSGTYPE type,
@@ -151,9 +149,12 @@ ssize_t h2op_send ( const nodeid_t recipient, H2OP_MSGTYPE type,
         .crc = 0,
     };
     memcpy(buf.data, data, len);
-    buf.header.crc = crc16_ccitt_calc((uint8_t*) &buf, buflen);
 
+    // calculate crc on what is actually sent over the network
     h2op_header_hton(&buf.header);
+
+    buf.header.crc = htons(crc16_ccitt_calc((uint8_t*) &buf, buflen));
+
     rv = udp_send(&recipient_ip, H2OP_PORT, (uint8_t*) &buf, buflen);
     printf("%d bytes sent to ", rv); ipv6_addr_print(&recipient_ip); putchar('\n');
     return rv;
@@ -166,7 +167,6 @@ void h2op_debug_receive_handler ( uint8_t *buf, uint16_t packetlen ) {
         return;
     }
     H2OP_HEADER *header = (H2OP_HEADER*) buf;
-    h2op_header_ntoh(header);
 
     if ( header->magic != H2OP_MAGIC ) {
         error(0,0, "invalid magic number (got 0x%02X, want 0xAC)", header->magic);
@@ -177,7 +177,7 @@ void h2op_debug_receive_handler ( uint8_t *buf, uint16_t packetlen ) {
         return;
     }
 
-    uint16_t crc_want = header->crc;
+    uint16_t crc_want = ntohs(header->crc);
     header->crc = 0;
     uint16_t crc_have = crc16_ccitt_calc(buf, packetlen);
     if ( crc_want != crc_have ) {
@@ -185,6 +185,7 @@ void h2op_debug_receive_handler ( uint8_t *buf, uint16_t packetlen ) {
               crc_want, crc_have);
         return;
     }
+    h2op_header_ntoh(header);
 
     if ( packetlen < header->len ) {
         error(0,0, "packet length (%u) < length field in header (%u)",
@@ -206,8 +207,8 @@ int h2o_dump_server ( int argc, char *argv[]) {
     (void) argv;
 
     puts("Starting Server. Example usage:");
-    puts("printf '\\xac\\x01\\x0c\\x00\\x12\\x34\\x4e\\x67DATA' "
-         "| nc -6u ff02::1%tapbr0 44555");
+    puts("printf '\\xac\\x01\\x0a\\x11Vx\\xcd\\xc3\\x00\\x24' "
+         "| nc -6u ff02::1%tapbr0 44555 -w0");
 
     udp_server(H2OP_PORT, &h2op_debug_receive_handler);
     return 0;
