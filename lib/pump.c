@@ -60,7 +60,7 @@ printf("CLOSE PUMP \n");
 }
 
 
-//TODO: I would say pump_is_on should be global, not a parameter to this. --marian
+
 void pump_set_data(struct PumpDataStruct pump_data)
 {
     int open_pump = 0;
