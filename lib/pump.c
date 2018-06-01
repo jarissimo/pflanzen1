@@ -83,7 +83,6 @@ void pump_set_data(struct PumpDataStruct pump_data)
 
     else {
 
-	if (pump_data.data  < PUMP_THRESHOLD_VERYLOW || pump_data.data > PUMP_THRESHOLD_VERYHIGH){
 
         if(pump_data.data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
             make_pump_open();
@@ -124,21 +123,20 @@ void pump_set_data(struct PumpDataStruct pump_data)
             print_table(table);
         }
 	}
-     }
 	//When we got the values of all the sensors we operate with the values
         if(table[NUM_SENSORS-1][0] != 0){
-            printf("ALL SENSORS SENDED THE DATA \n");
             //Calculate the AvgHum
             for(int i=0;i<NUM_SENSORS;i++){
                 sum_hum = sum_hum + table[i][1];
             }
             avg_hum = sum_hum / NUM_SENSORS;
+            printf("ALL SENSORS SENT THE DATA. Average: %d \n", avg_hum);
 
-            if(avg_hum < PUMP_THRESHOLD_LOW && avg_hum > PUMP_THRESHOLD_VERYLOW){
+            if((avg_hum < PUMP_THRESHOLD_LOW) && (avg_hum > PUMP_THRESHOLD_VERYLOW)){
                 open_pump=1;
             }
 
-            if(avg_hum < PUMP_THRESHOLD_VERYHIGH && avg_hum > PUMP_THRESHOLD_HIGH && pump_is_on){
+            if((avg_hum < PUMP_THRESHOLD_VERYHIGH) && (avg_hum > PUMP_THRESHOLD_HIGH && pump_is_on)){
                 close_pump=1;
             }
             reset_table(table);
@@ -160,7 +158,7 @@ void pump_set_data(struct PumpDataStruct pump_data)
 int shell_pump_set_data( int argc, char * argv[])
 {
     //TODO We should change this insted of keyboard parameters, a functions should send the values
-    if ( argc < 2 ) {
+    if ( argc < 3 ) {
         printf("Usage: %s pump_id data_value\n", argv[0]);
         return 1;
     }
