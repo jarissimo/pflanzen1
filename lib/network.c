@@ -6,11 +6,12 @@
 #include "net/sock/udp.h"
 #include "net/ipv6/addr.h"
 
+#include "global.c"
 #include "util.h"
 
 typedef void (*receive_handler) (uint8_t* buf, uint16_t buflen);
-typedef uint16_t nodeid_t;
 
+#define IPV6_PREFIX_LENGTH (64)
 #define H2OP_PORT (44555)
 #define H2OP_MAGIC (0xAC)
 #define H2OP_VERSION (1)
@@ -215,11 +216,16 @@ int h2o_dump_server ( int argc, char *argv[]) {
 
 int h2o_send_data_shell ( int argc, char *argv[]) {
     if ( argc != 5 ) {
-        printf("Usage: %s from(nodeid) to(nodeid) "
+        printf("Usage: %s [from(nodeid)|-(=self)] [to(nodeid)|ffff(broadcast)] "
              "[temperature|humidity] value(0..255)\n", argv[0]);
         return 1;
     }
-    nodeid_t from = strtoul(argv[1], NULL, 16);
+    nodeid_t from;
+    if ( strcmp(argv[1], "-") == 0 ) {
+        from = NODE_ID;
+    } else {
+        from = strtoul(argv[1], NULL, 16);
+    }
     nodeid_t to = strtoul(argv[2], NULL, 16);
     int16_t value = strtol(argv[4], NULL, 10);
 
@@ -241,7 +247,29 @@ int h2o_send_data_shell ( int argc, char *argv[]) {
         error(0,-rv, "could not send data");
         return 1;
     } else {
-        puts("Data sent.");
         return 0;
+    }
+}
+
+void add_public_address ( const gnrc_netif_t *netif ) {
+    /* add the node's IPV6 address (deduced from NODE_ID).
+     * @param netif: interface id. may be null, then the first interface is used.
+     */
+    gnrc_netif_t ifid; // netif is const, don't change it
+    if ( netif == NULL ) {
+        ifid = *gnrc_netif_iter(NULL);
+    } else {
+        ifid = *netif;
+    }
+
+    ipv6_addr_t addr;
+    h2op_nodeid_to_addr(NODE_ID, &addr);
+    rv = gnrc_netif_ipv6_addr_add(&ifid, &addr, IPV6_PREFIX_LENGTH,
+                                  GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_VALID);
+    if ( rv != sizeof(ipv6_addr_t) ) {
+        error(0,-rv, "Cannot set address");
+        printf("Tried adding address: "); ipv6_addr_print(&addr); putchar('\n');
+    } else {
+        printf("My public address is: "); ipv6_addr_print(&addr); putchar('\n');
     }
 }
