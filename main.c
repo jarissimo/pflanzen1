@@ -37,6 +37,8 @@ int main(void)
     printf("[Pflanzen 1] Welcome! I am a %s, my node ID is %04X.\n",
            NODE_ROLE, NODE_ID);
 
+    add_public_address(NULL);
+
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
 

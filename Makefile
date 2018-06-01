@@ -20,9 +20,12 @@ else
 endif
 
 # RFC 4193. (prefix fd, random bytes 9c..af, subnet id ac01)
+# network prefix length is hardcoded to 64 (see lib/network.c)
 IPV6_NETWORK ?= 0xfd9c5921b4afac01
 #XXX is this okay? is this safe? is this the best way to do this?
-CFLAGS += -DH2O_NETWORK_PREFIX="((uint64_t)$(IPV6_NETWORK))"
+CFLAGS += -DH2O_NETWORK_PREFIX="((uint64_t)$(IPV6_NETWORK)U)"
+# we need a third multicast group for this address (default is 2)
+CFLAGS += -DGNRC_NETIF_IPV6_GROUPS_NUMOF=3
 
 # If no BOARD is found in the environment, use this default:
 BOARD ?= native
