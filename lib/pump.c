@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <shell.h>
 
 //Number of sensors
 #define NUM_SENSORS 5
@@ -71,14 +70,16 @@ bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
     if (pump_data.data  < PUMP_THRESHOLD_VERYLOW || pump_data.data > PUMP_THRESHOLD_VERYHIGH){
 
         if(pump_data.data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
-            open_pump();
+            printf("OpenPumpe \n");
             reset_table(table);
             pump_is_on = true;
+            //Here we should call the function that opens the pump
         }
 
         if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pump_is_on) {
-            close_pump();
+            printf("ClosePumpe");
             reset_table(table);
+            //Here we should call the function that closes the pump
         }
 
 
@@ -87,26 +88,25 @@ bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
     else {
         bool repeated_data = false;
 	//If the sensor is already present in the table we update his value if not we add it to the table
-        int aux=0;
-	int i=0;
-        //We look for the first free space in the table
-        while(!repeated_data || i<NUM_SENSORS-1){
-		if(table[i][0]==pump_data.id){
-			repeated_Data = true;
-		  	table[i][1] = pump_data.data;
-		   	printf("TableUpdated \n");
-		   	print_table(table);
-		}
-		if(table[i][0]!= 0){
-                aux++;
-		}
-		i++;
+        for(int i=0;i<NUM_SENSORS-1;i++) {
+
+            if(table[i][0]==pump_data.id){
+                repeated_data = true;
+                table[i][1] = pump_data.data;
+                printf("TableUpdated \n");
+                print_table(table);
+            }
         }
-	if(!repeated_data){
-        	table[aux][0] = pump_data.id;
-            	table[aux][1] = pump_data.data;
-            	printf("AddedToTable \n");
-            	print_table(table);
+        if(!repeated_data){
+            int aux=0;
+            //We look for the first free space in the table
+            while(table[aux][0] != 0){
+                aux++;
+            }
+            table[aux][0] = pump_data.id;
+            table[aux][1] = pump_data.data;
+            printf("AddedToTable \n");
+            print_table(table);
         }
 
 	//When we got the values of all the sensors we operate with the values
@@ -128,14 +128,16 @@ bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
             reset_table(table);
 
         }
-        if(open_pump==1 && !pump_is_on){
-            open_pump();
+        if(open_pump==1 && !pumpe_is_on){
+            printf("OPENPUMPE \n");
             pump_is_on = true;
+            //Here we should call the functions that opens the pump
         }
 
-        if(close_pump==1 && pump_is_on){
-            close_pump();
+        if(close_pump==1 && pumpe_is_on){
+            printf("CLOSEPUMPE \n");
             pump_is_on = false;
+            //Here we should call the functions that closes the pump
         }
     }
     return pump_is_on;
@@ -144,7 +146,7 @@ bool pump_set_data(struct PumpDataStruct pump_data, bool pump_is_on)
 int shell_pump_set_data( int argc, char * argv[])
 {
     //TODO We should change this insted of keyboard parameters, a functions should send the values
-    if ( argc < 3 ) {
+    if ( argc < 2 ) {
         printf("Usage: %s pump_id data_value\n", argv[0]);
         return 1;
     }
@@ -152,19 +154,6 @@ int shell_pump_set_data( int argc, char * argv[])
     pump_data.id = strtol( argv[1],NULL,10);
     pump_data.data = strtol( argv[2],NULL,10);
     static bool pump_state=false;
-    pump_state = pump_set_data(pump_data,pump_state);
+    pump_state = pump_set_data(pump_data,pumpe_state);
     return 0;
-}
-
-//This function activate the USB port in the board to open the pump
-void open_pump()
-{
-printf("OPEN PUMP");
-
-}
-
-//This function shutdown the USB port in the board to close the pump
-void close_pump()
-{
-printf("CLOSE PUMP");
 }
