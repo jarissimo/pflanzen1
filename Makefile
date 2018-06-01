@@ -8,6 +8,11 @@ ROLE ?= sensor
 #TODO error for invalid values
 CFLAGS += -DNODE_ROLE=\"$(ROLE)\"
 
+# RFC 4193. (prefix fd, random bytes 9c..af, subnet id ac01)
+IPV6_NETWORK ?= 0xfd9c5921b4afac01
+#XXX is this okay? is this safe? is this the best way to do this?
+CFLAGS += -DH2O_NETWORK_PREFIX="((uint64_t)$(IPV6_NETWORK))"
+
 # If no BOARD is found in the environment, use this default:
 BOARD ?= native
 
@@ -41,6 +46,8 @@ USEMODULE += gnrc_icmpv6_echo
 USEMODULE += gnrc_sock_udp
 # saul
 USEMODULE += saul_default
+# utilities
+USEMODULE += checksum
 
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
