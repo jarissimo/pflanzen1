@@ -73,15 +73,11 @@ void pump_set_data(struct PumpDataStruct pump_data)
         if(pump_is_on){
             make_pump_close();
             printf("Need to be filled");
-        }
-
-        else{
+        } else {
             printf("Need to be filled");
         }
 
-    }
-
-    else {
+    } else {
 
 
         if(pump_data.data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
@@ -89,42 +85,37 @@ void pump_set_data(struct PumpDataStruct pump_data)
             reset_table(table);
             pump_is_on = true;
 
-        }
-
-        else if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pump_is_on) {
+        } else if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pump_is_on) {
             make_pump_close();
             reset_table(table);
-	    pump_is_on = false;
-        }
+            pump_is_on = false;
+        } else {
 
+            bool repeated_data = false;
+            //If the sensor is already present in the table we update his value if not we add it to the table
+            for(int i=0;i<NUM_SENSORS;i++) {
 
-    	else{
-
-       	 bool repeated_data = false;
-	//If the sensor is already present in the table we update his value if not we add it to the table
-        for(int i=0;i<NUM_SENSORS;i++) {
-
-            if(table[i][0]==pump_data.id){
-                repeated_data = true;
-                table[i][1] = pump_data.data;
-                printf("TableUpdated \n");
+                if(table[i][0]==pump_data.id){
+                    repeated_data = true;
+                    table[i][1] = pump_data.data;
+                    printf("TableUpdated \n");
+                    print_table(table);
+                }
+            }
+            if(!repeated_data){
+                int aux=0;
+                //We look for the first free space in the table
+                while(table[aux][0] != 0){
+                    aux++;
+                }
+                table[aux][0] = pump_data.id;
+                table[aux][1] = pump_data.data;
+                printf("AddedToTable \n");
                 print_table(table);
             }
         }
-        if(!repeated_data){
-            int aux=0;
-            //We look for the first free space in the table
-            while(table[aux][0] != 0){
-                aux++;
-            }
-            table[aux][0] = pump_data.id;
-            table[aux][1] = pump_data.data;
-            printf("AddedToTable \n");
-            print_table(table);
-        }
-	}
-	//When we got the values of all the sensors we operate with the values
-        if(table[NUM_SENSORS-1][0] != 0){
+        //When we got the values of all the sensors we operate with the values
+        if(table[NUM_SENSORS-1][0] != 0) {
             //Calculate the AvgHum
             for(int i=0;i<NUM_SENSORS;i++){
                 sum_hum = sum_hum + table[i][1];
@@ -140,8 +131,8 @@ void pump_set_data(struct PumpDataStruct pump_data)
                 close_pump=1;
             }
             reset_table(table);
-
         }
+
         if(open_pump==1 && !pump_is_on){
             make_pump_open();
             pump_is_on = true; 
