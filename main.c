@@ -44,6 +44,9 @@ int main(void)
 #ifdef UPSTREAM_NODE
     h2op_add_receive_hook(h2op_forward_data_hook);
 #endif
+#ifdef NODE_ROLE_COLLECTOR
+    h2op_add_receive_hook(h2op_pump_set_data_hook);
+#endif
 
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);

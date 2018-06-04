@@ -8,6 +8,7 @@
 
 #include "global.c"
 #include "util.h"
+#include "pump.h"
 
 #define IPV6_PREFIX_LENGTH (64)
 #define H2OP_PORT (44555)
@@ -296,7 +297,7 @@ void h2op_hooks_receive_handler ( uint8_t *buf, size_t packetlen ) {
 
     H2OP_MSGTYPE type = header->type;
     nodeid_t source = header->node;
-    size_t datalen = header->len - H2OP_HEADER_LENGTH;
+    size_t datalen = (header->len) - H2OP_HEADER_LENGTH;
     for ( size_t i=0; i < H2OP_RECEIVE_HOOKS_NUMOF; i++ ) {
         if ( H2OP_RECEIVE_HOOKS[i] != NULL ) {
             (H2OP_RECEIVE_HOOKS[i])(type, source, data, datalen);
@@ -385,6 +386,16 @@ void h2op_forward_data_hook (H2OP_MSGTYPE type, nodeid_t source,
     }
 }
 
+void h2op_pump_set_data_hook (H2OP_MSGTYPE type, nodeid_t source,
+                             uint8_t* data, size_t len) {
+    if ( type != H2OP_DATA_HUMIDITY ) return;
+    if ( len != 2 ) return;
+
+    int16_t hum = ntohs(* (int16_t*) data);
+
+    pump_set_data(source, hum);
+}
+
 // section: shell handlers
 
 int h2o_send_data_shell ( int argc, char *argv[]) {
@@ -411,7 +422,7 @@ int h2o_send_data_shell ( int argc, char *argv[]) {
     if ( argc < 4 || strcmp(argv[3], "-") == 0 ) {
         source = NODE_ID;
     } else {
-        source = strtoul(argv[1], NULL, 16);
+        source = strtoul(argv[3], NULL, 16);
     }
 
     nodeid_t to;
