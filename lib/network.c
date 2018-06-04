@@ -296,7 +296,7 @@ void h2op_hooks_receive_handler ( uint8_t *buf, size_t packetlen ) {
 
     H2OP_MSGTYPE type = header->type;
     nodeid_t source = header->node;
-    size_t datalen = packetlen-H2OP_HEADER_LENGTH;
+    size_t datalen = header->len - H2OP_HEADER_LENGTH;
     for ( size_t i=0; i < H2OP_RECEIVE_HOOKS_NUMOF; i++ ) {
         if ( H2OP_RECEIVE_HOOKS[i] != NULL ) {
             (H2OP_RECEIVE_HOOKS[i])(type, source, data, datalen);
@@ -351,9 +351,24 @@ int h2op_add_receive_hook ( h2op_receive_hook func ) {
 
 void h2op_debug_hook (H2OP_MSGTYPE type, nodeid_t source,
                       uint8_t* data, size_t len) {
-    printf("H2OP packet received.  type: %s(0x%X)  source: %04x  ",
+    printf("H2OP packet received.  type: %s(0x%X)  source: %04x\n",
             h2op_msgtype_string(type), type, source);
-    hexdump("data", data, len);
+    switch ( type ) {
+        case H2OP_DATA_TEMPERATURE:
+            if (len != 2) break;
+            int16_t temp = ntohs(* (int16_t*) data);
+            printf("Temperature: %hd\n", temp);
+            return;
+        case H2OP_DATA_HUMIDITY:
+            if (len != 2) break;
+            int16_t hum = ntohs(* (int16_t*) data);
+            printf("Humidity: %hd\n", hum);
+            return;
+        default:
+            // avoid "blabla not handled in switch" error
+            break;
+    }
+    hexdump("Could not interpret packet contents", data, len);
 }
 
 void h2op_forward_data_hook (H2OP_MSGTYPE type, nodeid_t source,
