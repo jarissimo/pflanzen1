@@ -52,6 +52,10 @@ h2op_receive_hook H2OP_RECEIVE_HOOKS[H2OP_RECEIVE_HOOKS_NUMOF];
 #define SERVER_MSG_QUEUE_SIZE (8)
 #define SERVER_BUFFER_SIZE (H2OP_MAX_LENGTH)
 
+int rv; // generic declaration for return value (use locally only)
+
+// section: address handling
+
 void h2op_nodeid_to_addr ( nodeid_t nodeid, ipv6_addr_t *addr) {
     switch(nodeid) {
         case 0: // reserved
@@ -68,45 +72,33 @@ void h2op_nodeid_to_addr ( nodeid_t nodeid, ipv6_addr_t *addr) {
     }
 }
 
-int rv; // generic declaration for return value (use locally only)
-
-void udp_server(uint16_t port, h2op_receive_handler handler) {
-    /* Create a UDP server that calls the receive_handler for each incoming message.
-     *
-     * @param port: the port to listen at
-     * @param handler: the function to call. It must accept two parameters:
-     * - a pointer to a memory area where the received data is stored.
-     * - the length of this data.
+void add_public_address ( const gnrc_netif_t *netif ) {
+    /* add the node's IPV6 address (deduced from NODE_ID).
+     * @param netif: interface id. may be null, then the first interface is used.
      */
-    static sock_udp_t sock;
-    static uint8_t server_buffer[SERVER_BUFFER_SIZE];
-    static msg_t server_msg_queue[SERVER_MSG_QUEUE_SIZE];
-
-    sock_udp_ep_t server = { .port = port, .family = AF_INET6, };
-    msg_init_queue(server_msg_queue, SERVER_MSG_QUEUE_SIZE);
-
-    if((rv = sock_udp_create(&sock, &server, NULL, 0)) < 0) {
-        error(-rv, 0, "Could not start UDP server");
-        return;
+    gnrc_netif_t ifid; // netif is const, don't change it
+    if ( netif == NULL ) {
+        ifid = *gnrc_netif_iter(NULL);
+    } else {
+        ifid = *netif;
     }
 
-    printf("UDP server running on port %u.\n", port);
-
-    while (true) {
-        int res;
-
-        //TODO: store sender address
-        res = sock_udp_recv(&sock, server_buffer, sizeof(server_buffer),
-                            SOCK_NO_TIMEOUT, NULL);
-        if ( res < 0 ) {
-            error(0, -res, "Error while receiving");
-            return;
-        } else if ( res == 0 ) {
-            puts("no data received");
-        } else {
-            handler(server_buffer, res);
-        }
+    ipv6_addr_t addr;
+    h2op_nodeid_to_addr(NODE_ID, &addr);
+    rv = gnrc_netif_ipv6_addr_add(&ifid, &addr, IPV6_PREFIX_LENGTH,
+                                  GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_VALID);
+    if ( rv != sizeof(ipv6_addr_t) ) {
+        error(0,-rv, "Cannot set address");
+        printf("Tried adding address: "); ipv6_addr_print(&addr); putchar('\n');
+    } else {
+        printf("My public address is: "); ipv6_addr_print(&addr); putchar('\n');
     }
+}
+
+// section: h2op client
+
+void h2op_header_hton ( H2OP_HEADER *header ) {
+    header->node = htons(header->node);
 }
 
 ssize_t udp_send ( const ipv6_addr_t *recipient, uint16_t port,
@@ -127,14 +119,6 @@ ssize_t udp_send ( const ipv6_addr_t *recipient, uint16_t port,
     ssize_t res = sock_udp_send(NULL, data, data_len, &remote);
     // TODO error handling
     return res;
-}
-
-void h2op_header_hton ( H2OP_HEADER *header ) {
-    header->node = htons(header->node);
-}
-
-void h2op_header_ntoh ( H2OP_HEADER *header ) {
-    header->node = ntohs(header->node);
 }
 
 ssize_t h2op_send ( const nodeid_t recipient, H2OP_MSGTYPE type,
@@ -176,6 +160,51 @@ ssize_t h2op_send ( const nodeid_t recipient, H2OP_MSGTYPE type,
     rv = udp_send(&recipient_ip, H2OP_PORT, (uint8_t*) &buf, buflen);
     printf("%d bytes sent to ", rv); ipv6_addr_print(&recipient_ip); putchar('\n');
     return rv;
+}
+
+// section: h2op server part
+
+void h2op_header_ntoh ( H2OP_HEADER *header ) {
+    header->node = ntohs(header->node);
+}
+
+void udp_server(uint16_t port, h2op_receive_handler handler) {
+    /* Create a UDP server that calls the receive_handler for each incoming message.
+     *
+     * @param port: the port to listen at
+     * @param handler: the function to call. It must accept two parameters:
+     * - a pointer to a memory area where the received data is stored.
+     * - the length of this data.
+     */
+    static sock_udp_t sock;
+    static uint8_t server_buffer[SERVER_BUFFER_SIZE];
+    static msg_t server_msg_queue[SERVER_MSG_QUEUE_SIZE];
+
+    sock_udp_ep_t server = { .port = port, .family = AF_INET6, };
+    msg_init_queue(server_msg_queue, SERVER_MSG_QUEUE_SIZE);
+
+    if((rv = sock_udp_create(&sock, &server, NULL, 0)) < 0) {
+        error(-rv, 0, "Could not start UDP server");
+        return;
+    }
+
+    printf("UDP server running on port %u.\n", port);
+
+    while (true) {
+        int res;
+
+        //TODO: store sender address
+        res = sock_udp_recv(&sock, server_buffer, sizeof(server_buffer),
+                            SOCK_NO_TIMEOUT, NULL);
+        if ( res < 0 ) {
+            error(0, -res, "Error while receiving");
+            return;
+        } else if ( res == 0 ) {
+            puts("no data received");
+        } else {
+            handler(server_buffer, res);
+        }
+    }
 }
 
 uint8_t* h2op_preprocess_packet ( uint8_t *buf, size_t packetlen ) {
@@ -243,6 +272,50 @@ void h2op_debug_receive_handler ( uint8_t *buf, size_t packetlen ) {
     hexdump("Data", data, (header->len)-H2OP_HEADER_LENGTH);
 }
 
+int h2o_dump_server ( int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    puts("Starting Server. Example usage:");
+    puts("printf '\\xac\\x01\\x0a\\x11Vx\\xcd\\xc3\\x00\\x24' "
+         "| nc -6u ff02::1%tapbr0 44555 -w0");
+
+    udp_server(H2OP_PORT, &h2op_debug_receive_handler);
+    return 0;
+}
+
+void h2op_hooks_receive_handler ( uint8_t *buf, size_t packetlen ) {
+    /* debug handler for `udp_server` that calls hooks defined by
+     * `h2op_add_receive_hook` for each packet.
+     */
+    uint8_t *data = h2op_preprocess_packet ( buf, packetlen );
+    if (data == NULL) {
+        return;
+    }
+    H2OP_HEADER *header = (H2OP_HEADER*) buf;
+
+    H2OP_MSGTYPE type = header->type;
+    nodeid_t source = header->node;
+    size_t datalen = packetlen-H2OP_HEADER_LENGTH;
+    for ( size_t i=0; i < H2OP_RECEIVE_HOOKS_NUMOF; i++ ) {
+        if ( H2OP_RECEIVE_HOOKS[i] != NULL ) {
+            (H2OP_RECEIVE_HOOKS[i])(type, source, data, datalen);
+        }
+    }
+}
+
+int h2o_server ( int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    puts("Starting Server. Example usage:");
+    puts("printf '\\xac\\x01\\x0c\\x00\\x12\\x34\\x4e\\x67DATA' "
+         "| nc -6u ff02::1%tapbr0 44555");
+
+    udp_server(H2OP_PORT, &h2op_hooks_receive_handler);
+    return 0;
+}
+
 void h2op_del_receive_hook ( h2op_receive_hook func ) {
     /* Remove a receive hook set by `h2op_add_receive_hook`.
      * If the hook is not defined, do nothing.
@@ -274,46 +347,13 @@ int h2op_add_receive_hook ( h2op_receive_hook func ) {
     return -ENOMEM;
 }
 
+// section: interaction with other modules
+
 void h2op_debug_hook (H2OP_MSGTYPE type, nodeid_t source,
                       uint8_t* data, size_t len) {
     printf("H2OP packet received.  type: %s(0x%X)  source: %04x  ",
             h2op_msgtype_string(type), type, source);
     hexdump("data", data, len);
-}
-
-int shell_h2od_debug(int argc, char *argv[])
-{
-    if ( argc <= 1 || strcmp(argv[1], "on") == 0 ) {
-        h2op_add_receive_hook(&h2op_debug_hook);
-        printf("Debug prints activated. Run `%s off` to disable.\n", argv[0]);
-    } else if ( argc > 1 && strcmp(argv[1], "off") == 0 ) {
-        h2op_del_receive_hook(&h2op_debug_hook);
-        printf("Debug prints have been turned off.\n");
-    } else {
-        printf("Usage: %s [on]|off\n", argv[0]);
-        return 1;
-    }
-    return 0;
-}
-
-void h2op_hooks_receive_handler ( uint8_t *buf, size_t packetlen ) {
-    /* debug handler for `udp_server` that calls hooks defined by
-     * `h2op_add_receive_hook` for each packet.
-     */
-    uint8_t *data = h2op_preprocess_packet ( buf, packetlen );
-    if (data == NULL) {
-        return;
-    }
-    H2OP_HEADER *header = (H2OP_HEADER*) buf;
-
-    H2OP_MSGTYPE type = header->type;
-    nodeid_t source = header->node;
-    size_t datalen = packetlen-H2OP_HEADER_LENGTH;
-    for ( size_t i=0; i < H2OP_RECEIVE_HOOKS_NUMOF; i++ ) {
-        if ( H2OP_RECEIVE_HOOKS[i] != NULL ) {
-            (H2OP_RECEIVE_HOOKS[i])(type, source, data, datalen);
-        }
-    }
 }
 
 void h2op_forward_data_hook (H2OP_MSGTYPE type, nodeid_t source,
@@ -330,29 +370,7 @@ void h2op_forward_data_hook (H2OP_MSGTYPE type, nodeid_t source,
     }
 }
 
-int h2o_dump_server ( int argc, char *argv[]) {
-    (void) argc;
-    (void) argv;
-
-    puts("Starting Server. Example usage:");
-    puts("printf '\\xac\\x01\\x0a\\x11Vx\\xcd\\xc3\\x00\\x24' "
-         "| nc -6u ff02::1%tapbr0 44555 -w0");
-
-    udp_server(H2OP_PORT, &h2op_debug_receive_handler);
-    return 0;
-}
-
-int h2o_server ( int argc, char *argv[]) {
-    (void) argc;
-    (void) argv;
-
-    puts("Starting Server. Example usage:");
-    puts("printf '\\xac\\x01\\x0c\\x00\\x12\\x34\\x4e\\x67DATA' "
-         "| nc -6u ff02::1%tapbr0 44555");
-
-    udp_server(H2OP_PORT, &h2op_hooks_receive_handler);
-    return 0;
-}
+// section: shell handlers
 
 int h2o_send_data_shell ( int argc, char *argv[]) {
     if ( argc < 3 ) {
@@ -404,25 +422,18 @@ int h2o_send_data_shell ( int argc, char *argv[]) {
     }
 }
 
-void add_public_address ( const gnrc_netif_t *netif ) {
-    /* add the node's IPV6 address (deduced from NODE_ID).
-     * @param netif: interface id. may be null, then the first interface is used.
-     */
-    gnrc_netif_t ifid; // netif is const, don't change it
-    if ( netif == NULL ) {
-        ifid = *gnrc_netif_iter(NULL);
+int shell_h2od_debug(int argc, char *argv[])
+{
+    if ( argc <= 1 || strcmp(argv[1], "on") == 0 ) {
+        h2op_add_receive_hook(&h2op_debug_hook);
+        printf("Debug prints activated. Run `%s off` to disable.\n", argv[0]);
+    } else if ( argc > 1 && strcmp(argv[1], "off") == 0 ) {
+        h2op_del_receive_hook(&h2op_debug_hook);
+        printf("Debug prints have been turned off.\n");
     } else {
-        ifid = *netif;
+        printf("Usage: %s [on]|off\n", argv[0]);
+        return 1;
     }
-
-    ipv6_addr_t addr;
-    h2op_nodeid_to_addr(NODE_ID, &addr);
-    rv = gnrc_netif_ipv6_addr_add(&ifid, &addr, IPV6_PREFIX_LENGTH,
-                                  GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_VALID);
-    if ( rv != sizeof(ipv6_addr_t) ) {
-        error(0,-rv, "Cannot set address");
-        printf("Tried adding address: "); ipv6_addr_print(&addr); putchar('\n');
-    } else {
-        printf("My public address is: "); ipv6_addr_print(&addr); putchar('\n');
-    }
+    return 0;
 }
+
