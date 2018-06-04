@@ -18,6 +18,8 @@ static const shell_command_t shell_commands[] = {
     { "light", "read light data", read_light },
     { "humidity", "read humidity data", read_humidity },
     { "h2o_dumpd", "start debug h2o server that just prints data it receives", h2o_dump_server },
+    { "h2od", "start h2o server", h2o_server },
+    { "h2od_debug", "turn h2od debug prints on and off", shell_h2od_debug },
     { "pump_set_data", "Send data to the pump controller", shell_pump_set_data },
     { "h2o_send_data", "send data using the h2o protocol", h2o_send_data_shell },
     { NULL, NULL, NULL },
@@ -38,6 +40,10 @@ int main(void)
            NODE_ROLE, NODE_ID);
 
     add_public_address(NULL);
+
+#ifdef UPSTREAM_NODE
+    h2op_add_receive_hook(h2op_forward_data_hook);
+#endif
 
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
