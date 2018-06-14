@@ -17,13 +17,6 @@
 #define PUMP_THRESHOLD_LOW  10
 #define PUMP_THRESHOLD_VERYLOW  5
 
-//Struct that stores id of the sensors and humidity value
-struct PumpDataStruct
-{
-    int id;
-    int data;
-} pump_data;
-
 //Table to storage sensors data the size of the table depens on the number of sensors
 int table [NUM_SENSORS][2];
 bool pump_is_on = false;
@@ -59,16 +52,14 @@ void make_pump_close(void)
 printf("CLOSE PUMP \n");
 }
 
-
-
-void pump_set_data(struct PumpDataStruct pump_data)
+void pump_set_data(int id, int data)
 {
     int open_pump = 0;
     int close_pump = 0;
     int sum_hum = 0;
     int avg_hum = 0;
 
-    if(pump_data.id == ID_WATER_LEVEL_SENSOR && pump_data.data < HUMIDICITY_LEVEL_ACCEPTED)
+    if(id == ID_WATER_LEVEL_SENSOR && data < HUMIDICITY_LEVEL_ACCEPTED)
     {
         if(pump_is_on){
             make_pump_close();
@@ -80,12 +71,12 @@ void pump_set_data(struct PumpDataStruct pump_data)
     } else {
 
 
-        if(pump_data.data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
+        if(data < PUMP_THRESHOLD_VERYLOW && !pump_is_on){
             make_pump_open();
             reset_table(table);
             pump_is_on = true;
 
-        } else if(pump_data.data  > PUMP_THRESHOLD_VERYHIGH && pump_is_on) {
+        } else if(data  > PUMP_THRESHOLD_VERYHIGH && pump_is_on) {
             make_pump_close();
             reset_table(table);
             pump_is_on = false;
@@ -95,9 +86,9 @@ void pump_set_data(struct PumpDataStruct pump_data)
             //If the sensor is already present in the table we update his value if not we add it to the table
             for(int i=0;i<NUM_SENSORS;i++) {
 
-                if(table[i][0]==pump_data.id){
+                if(table[i][0]==id){
                     repeated_data = true;
-                    table[i][1] = pump_data.data;
+                    table[i][1] = data;
                     printf("TableUpdated \n");
                     print_table(table);
                 }
@@ -108,8 +99,8 @@ void pump_set_data(struct PumpDataStruct pump_data)
                 while(table[aux][0] != 0){
                     aux++;
                 }
-                table[aux][0] = pump_data.id;
-                table[aux][1] = pump_data.data;
+                table[aux][0] = id;
+                table[aux][1] = data;
                 printf("AddedToTable \n");
                 print_table(table);
             }
@@ -154,8 +145,8 @@ int shell_pump_set_data( int argc, char * argv[])
         return 1;
     }
 
-    pump_data.id = strtol( argv[1],NULL,10);
-    pump_data.data = strtol( argv[2],NULL,10);
-    pump_set_data(pump_data);
+    int id = strtol( argv[1],NULL,10);
+    int data = strtol( argv[2],NULL,10);
+    pump_set_data(id, data);
     return 0;
 }
