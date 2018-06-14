@@ -405,7 +405,7 @@ int h2o_send_data_shell ( int argc, char *argv[]) {
         return 1;
     }
 
-    H2OP_MSGTYPE type;
+    H2OP_MSGTYPE type = H2OP_DATA_TEMPERATURE;
     if ( argv[1][0] == 't' ) {
         type = H2OP_DATA_TEMPERATURE;
     } else if ( argv[1][0] == 'h' ) {
