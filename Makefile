@@ -12,17 +12,10 @@ APPLICATION = Pflanzen1
 #   		    controls the pump)
 BOARD ?= native
 
-ifeq ($(BOARD),native)
-    BOARD_TYPE = 1
-endif
-ifeq ($(BOARD),samr21-xpro)
-    BOARD_TYPE = 2
-endif
-ifeq ($(BOARD),pba-d-01-kw2x)
-    BOARD_TYPE = 3
-endif
+# NOTE This is already take care of by RIOT
+# CFLAGS += -DBOARD_"$(shell echo $(BOARD) | tr a-z A-Z | tr - _)"
 
-CFLAGS += -DBOARD_TYPE=\"$(BOARD_TYPE)\"
+CFLAGS += -DBOARD_TYPE=$(BOARD_TYPE)
 
 ROLE ?= sensor
 
@@ -124,11 +117,20 @@ USEMODULE += checksum
 
 
 USEMODULE += xtimer
-FEATURES_REQUIRED = periph_adc
+
+
+ifneq ($(BOARD),native)
+	FEATURES_REQUIRED = periph_adc
+endif
 
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:
 DEVELHELP ?= 1
+
+# custom debug settings
+DEBUG_ASSERT_VERBOSE ?= 0
+DEBUG_SENSORS ?= 0
+CFLAGS += -DDEBUG_SENSORS="$(DEBUG_SENSORS)"
 
 include $(RIOTBASE)/Makefile.include

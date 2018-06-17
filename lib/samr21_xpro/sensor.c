@@ -6,6 +6,8 @@
 #include "xtimer.h"
 #include "periph/adc.h"
 #include "periph/gpio.h"
+#include "saul.h"
+#include "saul_reg.h"
 #include "../util.h"
 
 #define RES                         ADC_RES_12BIT
@@ -50,40 +52,58 @@ int initialize_sensors(void) {
 }
 
 
-int read_humidity(void) {
+int read_humidity(phydat_t *res) {
     
+    res->unit = UNIT_PERCENT;
+    res->scale = 0;
+
     gpio_set(GPIO_POWER);
     xtimer_sleep(ADC_SLEEP1);
 
-    int value = adc_sample(ADC_USED_LINE, RES);
+    double value = (double) adc_sample(ADC_USED_LINE, RES);
     xtimer_sleep(ADC_SLEEP2);
     gpio_clear(GPIO_POWER);
 
-    return value;
+    double max = 4095.0;
+
+    value = (100.0/max) * value;
+
+    res->val[0] = value;
+    res->val[1] = 0;
+    res->val[2] = 0;
+
+    /* always return 1 as humidity has a dim of 1 */
+    return 1;
 }
 
-int read_humidity_shell(int argc, char **argv) {
-    
-    (void) argc;
-    (void) argv;
+/* int read_humidity_shell(int argc, char **argv) { */
+/*     (void) argc; */
+/*     (void) argv; */
 
-    int value = read_humidity();
-    printf("Value: %4i\n", value);
+/*     phydat_t res; */
 
-    return 0;
-}
+/*     int dim = read_humidity(&res); */
+/*     if (dim >= 0) { */
+/*         puts("Read humidity:"); */
+/*         phydat_dump(&res, dim); */
+/*         return 0; */
+/*     } */
+/*     return -1; */
 
-int read_light(void) {
+/* } */
+
+int read_light(phydat_t *res) {
+    (void) res;
 
     error(-1, 0, "Sensor not present or read light not implemented for this board.");    
     return -1;
 }
 
-int read_light_shell(int argc, char **argv) {
+/* int read_light_shell(int argc, char **argv) { */
 
-    (void) argc;
-    (void) argv;
+/*     (void) argc; */
+/*     (void) argv; */
 
-    error(-1, 0, "Sensor not present or read light not implemented for this board.");    
-    return -1;
-}
+/*     error(-1, 0, "Sensor not present or read light not implemented for this board."); */    
+/*     return -1; */
+/* } */

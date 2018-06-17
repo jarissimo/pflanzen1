@@ -53,9 +53,12 @@ int main(void)
 #endif
 
     initialize_sensors();
+
+#ifdef NODE_ROLE_SENSOR
     thread_create(thread_stack, sizeof(thread_stack),
                   THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
                   sensor_thread, NULL, "sensor_thread");
+#endif
 
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
