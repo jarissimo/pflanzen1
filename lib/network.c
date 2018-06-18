@@ -376,6 +376,8 @@ void h2op_debug_hook (H2OP_MSGTYPE type, nodeid_t source,
     hexdump("Could not interpret packet contents", data, len);
 }
 
+// This can only be used for collector nodes, and when UPSTREAM_NODE is set.
+#ifdef UPSTREAM_NODE
 void h2op_forward_data_hook (H2OP_MSGTYPE type, nodeid_t source,
                              uint8_t* data, size_t len) {
     /* forward all data packets to the upstream node, towards the collector */
@@ -389,6 +391,7 @@ void h2op_forward_data_hook (H2OP_MSGTYPE type, nodeid_t source,
         error(0,rv,"Could not forward packet");
     }
 }
+#endif
 
 void h2op_pump_set_data_hook (H2OP_MSGTYPE type, nodeid_t source,
                              uint8_t* data, size_t len) {
