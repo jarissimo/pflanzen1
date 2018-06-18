@@ -208,27 +208,29 @@ void udp_server(uint16_t port, h2op_receive_handler handler) {
     }
 }
 
-uint8_t* h2op_preprocess_packet ( uint8_t *buf, size_t packetlen ) {
+int h2op_preprocess_packet ( uint8_t *buf, size_t packetlen, uint8_t **data ) {
     /* Preprocess H2OP packet (convert byte order, verify header and checksum)
      * @pre: *buf is unmodified as received from the network
-     * @post: on success, *buf header fields are in host byte order
-     *        on fail, an error message was printed to stderr.
-     * @return: pointer to the start of the data field on success, else NULL
+     * @post: on success, headers and checksum are valid,
+     *                    *buf header fields are in host byte order, and
+     *                    *data points to the start of data
+     *        on error, an error message was printed to stderr.
+     * @return: length of data on success, -EINVAL on error
      */
-    /* print contents of h2op package to stdout */
+
     if ( packetlen < H2OP_HEADER_LENGTH ) {
         error(0,0, "invalid packet received: length < %u", H2OP_HEADER_LENGTH);
-        return NULL;
+        return -EINVAL;
     }
     H2OP_HEADER *header = (H2OP_HEADER*) buf;
 
     if ( header->magic != H2OP_MAGIC ) {
         error(0,0, "invalid magic number (got 0x%02X, want 0xAC)", header->magic);
-        return NULL;
+        return -EINVAL;
     }
     if ( header->version != H2OP_VERSION ) {
         error(0,0, "unknown version (got 0x%02X, want 0x01)", header->version);
-        return NULL;
+        return -EINVAL;
     }
 
     uint16_t crc_want = ntohs(header->crc);
@@ -237,14 +239,14 @@ uint8_t* h2op_preprocess_packet ( uint8_t *buf, size_t packetlen ) {
     if ( crc_want != crc_have ) {
         error(0,0, "crc mismatch (got 0x%04X, calculated 0x%04X)",
               crc_want, crc_have);
-        return NULL;
+        return -EINVAL;
     }
     h2op_header_ntoh(header);
 
     if ( packetlen < header->len ) {
         error(0,0, "packet length (%u) < length field in header (%u)",
               packetlen, header->len);
-        return NULL;
+        return -EINVAL;
     }
     else if ( packetlen > header->len ) {
         printf("INFO: packet length (%u) > length field in header (%u)\n",
@@ -253,17 +255,18 @@ uint8_t* h2op_preprocess_packet ( uint8_t *buf, size_t packetlen ) {
 
     if ( h2op_msgtype_string(header->type) == NULL ) {
         error(0,0, "invalid message type: %u\n", header->type);
-        return NULL;
+        return -EINVAL;
     }
 
-    // return start of data
-    return buf+H2OP_HEADER_LENGTH;
+    *data = buf+H2OP_HEADER_LENGTH;
+    return header->len;
 }
 
 void h2op_debug_receive_handler ( uint8_t *buf, size_t packetlen ) {
     /* debug handler for `udp_server` that just prints data it receives*/
-    uint8_t* data = h2op_preprocess_packet ( buf, packetlen );
-    if (data == NULL) {
+    uint8_t* data = NULL;
+    rv = h2op_preprocess_packet ( buf, packetlen, &data );
+    if ( rv <= 0 ) {
         return;
     }
     H2OP_HEADER *header = (H2OP_HEADER*) buf;
@@ -286,11 +289,12 @@ int h2o_dump_server ( int argc, char *argv[]) {
 }
 
 void h2op_hooks_receive_handler ( uint8_t *buf, size_t packetlen ) {
-    /* debug handler for `udp_server` that calls hooks defined by
+    /* handler for `udp_server` that calls hooks defined by
      * `h2op_add_receive_hook` for each packet.
      */
-    uint8_t *data = h2op_preprocess_packet ( buf, packetlen );
-    if (data == NULL) {
+    uint8_t *data = NULL;
+    rv = h2op_preprocess_packet ( buf, packetlen, &data );
+    if ( rv <= 0 ) {
         return;
     }
     H2OP_HEADER *header = (H2OP_HEADER*) buf;
