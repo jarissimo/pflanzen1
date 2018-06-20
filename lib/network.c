@@ -262,32 +262,6 @@ int h2op_preprocess_packet ( uint8_t *buf, size_t packetlen, uint8_t **data ) {
     return header->len;
 }
 
-void h2op_debug_receive_handler ( uint8_t *buf, size_t packetlen ) {
-    /* debug handler for `udp_server` that just prints data it receives*/
-    uint8_t* data = NULL;
-    rv = h2op_preprocess_packet ( buf, packetlen, &data );
-    if ( rv <= 0 ) {
-        return;
-    }
-    H2OP_HEADER *header = (H2OP_HEADER*) buf;
-
-    printf("Packet received.       Type: %02x             Author: %04x  ",
-            header->type, header->node);
-    hexdump("Data", data, (header->len)-H2OP_HEADER_LENGTH);
-}
-
-int h2o_dump_server ( int argc, char *argv[]) {
-    (void) argc;
-    (void) argv;
-
-    puts("Starting Server. Example usage:");
-    puts("printf '\\xac\\x01\\x0a\\x11Vx\\xcd\\xc3\\x00\\x24' "
-         "| nc -6u ff02::1%tapbr0 44555 -w0");
-
-    udp_server(H2OP_PORT, &h2op_debug_receive_handler);
-    return 0;
-}
-
 void h2op_hooks_receive_handler ( uint8_t *buf, size_t packetlen ) {
     /* handler for `udp_server` that calls hooks defined by
      * `h2op_add_receive_hook` for each packet.
@@ -376,7 +350,7 @@ void h2op_debug_hook (H2OP_MSGTYPE type, nodeid_t source,
     hexdump("Could not interpret packet contents", data, len);
 }
 
-// This can only be used for collector nodes, and when UPSTREAM_NODE is set.
+// This can only be used when UPSTREAM_NODE is set.
 #ifdef UPSTREAM_NODE
 void h2op_forward_data_hook (H2OP_MSGTYPE type, nodeid_t source,
                              uint8_t* data, size_t len) {
