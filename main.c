@@ -21,6 +21,8 @@ static const shell_command_t shell_commands[] = {
     { "h2od_debug", "turn h2od debug prints on and off", shell_h2od_debug },
     { "pump_set_data", "Send data to the pump controller", shell_pump_set_data },
     { "h2o_send_data", "send data using the h2o protocol", h2o_send_data_shell },
+    { "info", "Print information about the node", shell_info },
+    { "exit", "Terminate program", shell_exit },
     { NULL, NULL, NULL },
 };
 
