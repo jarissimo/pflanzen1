@@ -44,6 +44,7 @@ typedef struct {
 #pragma pack(pop)
 #define H2OP_HEADER_LENGTH (sizeof(H2OP_HEADER))
 #define H2OP_MAX_LENGTH (127) // 802.15.4's mtu
+kernel_pid_t H2OD_THREAD_ID = KERNEL_PID_UNDEF;
 
 typedef void (*h2op_receive_handler) (uint8_t* buf, size_t buflen);
 typedef void (*h2op_receive_hook) (H2OP_MSGTYPE type, nodeid_t source,
@@ -189,21 +190,19 @@ void udp_server(uint16_t port, h2op_receive_handler handler) {
         return;
     }
 
-    printf("UDP server running on port %u.\n", port);
+    printf("Server running on port %u.\n", port);
 
     while (true) {
-        int res;
-
         //TODO: store sender address
-        res = sock_udp_recv(&sock, server_buffer, sizeof(server_buffer),
-                            SOCK_NO_TIMEOUT, NULL);
-        if ( res < 0 ) {
-            error(0, -res, "Error while receiving");
+        rv = sock_udp_recv(&sock, server_buffer, sizeof(server_buffer),
+                           SOCK_NO_TIMEOUT, NULL);
+        if ( rv < 0 ) {
+            error(0, -rv, "Error while receiving");
             return;
-        } else if ( res == 0 ) {
+        } else if ( rv == 0 ) {
             puts("no data received");
         } else {
-            handler(server_buffer, res);
+            handler(server_buffer, rv);
         }
     }
 }
@@ -283,18 +282,6 @@ void h2op_hooks_receive_handler ( uint8_t *buf, size_t packetlen ) {
     }
 }
 
-int h2o_server ( int argc, char *argv[]) {
-    (void) argc;
-    (void) argv;
-
-    puts("Starting Server. Example usage:");
-    puts("printf '\\xac\\x01\\x0c\\x00\\x12\\x34\\x4e\\x67DATA' "
-         "| nc -6u ff02::1%tapbr0 44555");
-
-    udp_server(H2OP_PORT, &h2op_hooks_receive_handler);
-    return 0;
-}
-
 void h2op_del_receive_hook ( h2op_receive_hook func ) {
     /* Remove a receive hook set by `h2op_add_receive_hook`.
      * If the hook is not defined, do nothing.
@@ -306,6 +293,7 @@ void h2op_del_receive_hook ( h2op_receive_hook func ) {
     }
 }
 
+//TODO not thread safe
 int h2op_add_receive_hook ( h2op_receive_hook func ) {
     /* Add a H2OP receive hook.
      * For each incoming H2OP packet, func() will be called once.
@@ -324,6 +312,29 @@ int h2op_add_receive_hook ( h2op_receive_hook func ) {
         }
     }
     return -ENOMEM;
+}
+
+void* h2od_thread ( void *arg ) {
+    (void) arg;
+    udp_server(H2OP_PORT, &h2op_hooks_receive_handler);
+    return NULL;
+}
+
+void h2od_start ( void ) {
+    if ( H2OD_THREAD_ID != KERNEL_PID_UNDEF ) {
+        puts("Server already running.");
+        return;
+    }
+
+    static char h2od_thread_stack[THREAD_STACKSIZE_MAIN];
+    H2OD_THREAD_ID = thread_create(h2od_thread_stack, sizeof(h2od_thread_stack),
+                                   THREAD_PRIORITY_H2OD, THREAD_CREATE_STACKTEST,
+                                   h2od_thread, NULL, "h2od_thread");
+
+    if ( H2OD_THREAD_ID < 0 ) {
+        error(0, -H2OD_THREAD_ID, "Cannot create h2od thread");
+        H2OD_THREAD_ID = KERNEL_PID_UNDEF;
+    }
 }
 
 // section: interaction with other modules
@@ -360,9 +371,10 @@ void h2op_forward_data_hook (H2OP_MSGTYPE type, nodeid_t source,
         return;
     }
 
+    printf("Forwarding packet... ");
     rv = h2op_send(UPSTREAM_NODE, type, data, len, source);
     if ( rv <= 0 ) {
-        error(0,rv,"Could not forward packet");
+        error(0,-rv,"Could not forward packet");
     }
 }
 #endif
@@ -429,8 +441,7 @@ int h2o_send_data_shell ( int argc, char *argv[]) {
     }
 }
 
-int shell_h2od_debug(int argc, char *argv[])
-{
+int shell_h2od_debug(int argc, char *argv[]) {
     if ( argc <= 1 || strcmp(argv[1], "on") == 0 ) {
         h2op_add_receive_hook(&h2op_debug_hook);
         printf("Debug prints activated. Run `%s off` to disable.\n", argv[0]);
@@ -441,6 +452,14 @@ int shell_h2od_debug(int argc, char *argv[])
         printf("Usage: %s [on]|off\n", argv[0]);
         return 1;
     }
+    return 0;
+}
+
+int shell_h2od ( int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    h2od_start();
     return 0;
 }
 

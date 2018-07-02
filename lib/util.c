@@ -2,6 +2,29 @@
 #include <stdarg.h>
 #include <unistd.h>
 
+int shell_info ( int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    printf("Node role:         %s\n", NODE_ROLE);
+    printf("Node ID:           %04X\n", NODE_ID);
+
+    ipv6_addr_t addr;
+    h2op_nodeid_to_addr(NODE_ID, &addr);
+    printf("IP Address:        "); fflush(stdout);
+    ipv6_addr_print(&addr);
+    putchar('\n');
+
+    return 0;
+}
+
+int shell_exit ( int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    _exit(0);
+}
+
 // from https://stackoverflow.com/a/7776146/196244 , slightly adapted
 void hexdump (char *desc, void *addr, int len) {
     /* Print some data as a hexdump (like `hexdump -C`)
