@@ -7,16 +7,20 @@
 #include "random.h"
 #include "lib/network.c"
 #include "lib/pump.c"
-#include "lib/sensor.c"
+#include "lib/sensor.h"
+#include "lib/sensor_thread.c"
 #include "lib/util.c"
 #include "lib/global.c"
+
+/* stack containing all started stacks */
+char thread_stack[THREAD_STACKSIZE_MAIN];
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 static const shell_command_t shell_commands[] = {
-    { "light", "read light data", read_light },
-    { "humidity", "read humidity data", read_humidity },
+    { "light", "read light data", read_light_shell },
+    { "humidity", "read humidity data", read_humidity_shell },
     { "h2od", "start h2o server", shell_h2od },
     { "h2od_debug", "turn h2od debug prints on and off", shell_h2od_debug },
     { "pump_set_data", "Send data to the pump controller", shell_pump_set_data },
@@ -25,6 +29,7 @@ static const shell_command_t shell_commands[] = {
     { "exit", "Terminate program", shell_exit },
     { NULL, NULL, NULL },
 };
+
 
 int main(void)
 {
@@ -50,6 +55,14 @@ int main(void)
 #endif
     //TODO maybe we don't always need it?
     h2od_start();
+
+    initialize_sensors();
+
+#ifdef NODE_ROLE_SENSOR
+    thread_create(thread_stack, sizeof(thread_stack),
+                  THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
+                  sensor_thread, NULL, "sensor_thread");
+#endif
 
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
