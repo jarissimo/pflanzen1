@@ -27,9 +27,9 @@ void *sensor_thread(void *arg)
         }
 
 
-        /* broadcast humidity */
+        /* send humidity */
 
-        nodeid_t to = strtoul("0xffff", NULL, 16);
+        nodeid_t to = UPSTREAM_NODE;
         nodeid_t source = NODE_ID;
         H2OP_MSGTYPE type = H2OP_DATA_HUMIDITY;
         int16_t netval = htons(res.val[0]);
