@@ -22,7 +22,6 @@ int shell_debug ( int argc, char *argv[]) {
     return 0;
 }
 
-
 int shell_info ( int argc, char *argv[]) {
     (void) argc;
     (void) argv;
