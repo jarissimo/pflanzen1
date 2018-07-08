@@ -45,7 +45,12 @@ int main(void)
     printf("[Pflanzen 1] Welcome! I am a %s, my node ID is %04X.\n",
            NODE_ROLE, NODE_ID);
 
-    add_public_address(NULL);
+#ifdef NODE_ROLE_SENSOR
+    network_init(false);
+#endif
+#ifdef NODE_ROLE_COLLECTOR
+    network_init(true);
+#endif
 
 // make sure this is the first hook so first thing we do is print received data
 h2op_add_receive_hook(&h2op_debug_hook);

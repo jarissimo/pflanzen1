@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "checksum/crc16_ccitt.h"
+#include "net/gnrc/rpl.h"
 #include "net/sock/udp.h"
 #include "net/ipv6/addr.h"
 
@@ -91,11 +92,39 @@ void add_public_address ( const gnrc_netif_t *netif ) {
                                   GNRC_NETIF_IPV6_ADDRS_FLAGS_STATE_VALID);
     if ( rv != sizeof(ipv6_addr_t) ) {
         error(0,-rv, "Cannot set address");
-        printf("Tried adding address: "); ipv6_addr_print(&addr); putchar('\n');
+        printf("Tried adding address: "); fflush(stdout);
+        ipv6_addr_print(&addr); putchar('\n');
     } else {
-        printf("My public address is: "); ipv6_addr_print(&addr); putchar('\n');
+        printf("My public address is: "); fflush(stdout);
+        ipv6_addr_print(&addr); putchar('\n');
     }
 }
+
+void network_init ( bool rpl_root ){
+
+    rv = gnrc_rpl_init((*gnrc_netif_iter(NULL)).pid); // just use the first if
+    if ( rv < 0 ) {
+        error(-rv, 0, "Error while initializing RPL");
+    } else if (PFLANZEN_DEBUG) {
+        puts("RPL initialized.");
+    }
+
+    if ( !rpl_root )
+        return;
+
+    add_public_address(NULL);
+
+    ipv6_addr_t myaddr;
+    h2op_nodeid_to_addr(NODE_ID, &myaddr);
+
+    rv = (int) gnrc_rpl_root_init(1, &myaddr, false, false);
+    if ( rv == 0 ) {
+        puts("Error while setting RPL root");
+    } else if (PFLANZEN_DEBUG) {
+        puts("RPL root set.");
+    }
+}
+
 
 // section: h2op client
 
