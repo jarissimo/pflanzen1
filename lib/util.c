@@ -2,6 +2,27 @@
 #include <stdarg.h>
 #include <unistd.h>
 
+#ifdef _PFLANZEN_DEBUG
+char PFLANZEN_DEBUG = _PFLANZEN_DEBUG;
+#else
+char PFLANZEN_DEBUG = 0;
+#endif
+
+int shell_debug ( int argc, char *argv[]) {
+    if ( argc <= 1 || strcmp(argv[1], "on") == 0 ) {
+        PFLANZEN_DEBUG = 1;
+        printf("Debug prints activated. Run `%s off` to disable.\n", argv[0]);
+    } else if ( argc > 1 && strcmp(argv[1], "off") == 0 ) {
+        PFLANZEN_DEBUG = 0;
+        printf("Debug prints have been turned off.\n");
+    } else {
+        printf("Usage: %s [on]|off\n", argv[0]);
+        return 1;
+    }
+    return 0;
+}
+
+
 int shell_info ( int argc, char *argv[]) {
     (void) argc;
     (void) argv;

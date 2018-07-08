@@ -44,6 +44,9 @@ else
 	CFLAGS += -DNODE_ID_="(0x$(NODE_ID))"
 endif
 
+PFLANZEN_DEBUG ?= 0
+CFLAGS += -D_PFLANZEN_DEBUG=$(PFLANZEN_DEBUG)
+
 # if a node cannot reach the collector directly (because of radio coverage
 # issues), another node can be used as a relay
 ifeq ($(ROLE), sensor)
@@ -101,6 +104,8 @@ RIOTBASE ?= $(CURDIR)/RIOT
 # development process:
 CFLAGS += -DDEVELHELP
 
+CFLAGS += -DDEBUG_ASSERT_VERBOSE
+
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
 
@@ -132,10 +137,5 @@ endif
 # which is not needed in a production environment but helps in the
 # development process:
 DEVELHELP ?= 1
-
-# custom debug settings
-DEBUG_ASSERT_VERBOSE ?= 0
-DEBUG_SENSORS ?= 0
-CFLAGS += -DDEBUG_SENSORS="$(DEBUG_SENSORS)"
 
 include $(RIOTBASE)/Makefile.include
