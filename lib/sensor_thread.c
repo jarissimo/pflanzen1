@@ -4,8 +4,6 @@
 /* interval of measurements in microseconds*/
 #define MEASUREMENTS_INTERVAL   (5 * 1000000)
 
-int enable_debug = 0;
-
 void *sensor_thread(void *arg)
 {
     (void) arg;
@@ -19,8 +17,7 @@ void *sensor_thread(void *arg)
         phydat_t res;
 
         int dim = read_humidity(&res);
-        if ( DEBUG_SENSORS ) {
-            printf("enable debug %d\n", enable_debug);
+        if ( PFLANZEN_DEBUG ) {
             if (dim >= 0) {
                 puts("Read humidity:");
                 phydat_dump(&res, dim);
@@ -36,11 +33,11 @@ void *sensor_thread(void *arg)
         int16_t netval = htons(res.val[0]);
 
         int rv = h2op_send(to, type, (uint8_t*) &netval, sizeof(res.val[0]), source);
-        if ( DEBUG_SENSORS ) {
+        if ( PFLANZEN_DEBUG ) {
             if ( rv <= 0 ) {
-                error(0,-rv, "could not send data");
+                error(0,-rv, "could not send humidity data");
             } else {
-                puts("send humidity");
+                puts("humidity data sent");
             }
         }
 

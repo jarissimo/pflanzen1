@@ -160,7 +160,10 @@ ssize_t h2op_send ( const nodeid_t recipient, H2OP_MSGTYPE type,
     buf.header.crc = htons(crc16_ccitt_calc((uint8_t*) &buf, buflen));
 
     rv = udp_send(&recipient_ip, H2OP_PORT, (uint8_t*) &buf, buflen);
-    printf("%d bytes sent to ", rv); fflush(stdout); ipv6_addr_print(&recipient_ip); putchar('\n');
+    if (PFLANZEN_DEBUG) {
+        printf("%d bytes sent to ", rv); fflush(stdout);
+        ipv6_addr_print(&recipient_ip); putchar('\n');
+    }
     return rv;
 }
 
@@ -341,6 +344,9 @@ void h2od_start ( void ) {
 
 void h2op_debug_hook (H2OP_MSGTYPE type, nodeid_t source,
                       uint8_t* data, size_t len) {
+    if (!PFLANZEN_DEBUG)
+        return;
+
     printf("H2OP packet received.  type: %s(0x%X)  source: %04x\n",
             h2op_msgtype_string(type), type, source);
     switch ( type ) {
@@ -371,7 +377,9 @@ void h2op_forward_data_hook (H2OP_MSGTYPE type, nodeid_t source,
         return;
     }
 
-    printf("Forwarding packet... ");
+    if ( PFLANZEN_DEBUG ) {
+        printf("Forwarding packet... ");
+    }
     rv = h2op_send(UPSTREAM_NODE, type, data, len, source);
     if ( rv <= 0 ) {
         error(0,-rv,"Could not forward packet");
@@ -439,20 +447,6 @@ int h2o_send_data_shell ( int argc, char *argv[]) {
     } else {
         return 0;
     }
-}
-
-int shell_h2od_debug(int argc, char *argv[]) {
-    if ( argc <= 1 || strcmp(argv[1], "on") == 0 ) {
-        h2op_add_receive_hook(&h2op_debug_hook);
-        printf("Debug prints activated. Run `%s off` to disable.\n", argv[0]);
-    } else if ( argc > 1 && strcmp(argv[1], "off") == 0 ) {
-        h2op_del_receive_hook(&h2op_debug_hook);
-        printf("Debug prints have been turned off.\n");
-    } else {
-        printf("Usage: %s [on]|off\n", argv[0]);
-        return 1;
-    }
-    return 0;
 }
 
 int shell_h2od ( int argc, char *argv[]) {
