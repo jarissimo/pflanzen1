@@ -461,6 +461,7 @@ int h2o_send_data_shell ( int argc, char *argv[]) {
         to = UPSTREAM_NODE;
 #else
         fprintf(stderr, "No upstream node set. TO cannot be empty.\n");
+        return 1;
 #endif
     } else {
         to = strtoul(argv[4], NULL, 16);

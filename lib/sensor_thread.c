@@ -8,6 +8,8 @@ void *sensor_thread(void *arg)
 {
     (void) arg;
 
+// This can only be used when UPSTREAM_NODE is set.
+#ifdef UPSTREAM_NODE
     initialize_sensors();
 
     xtimer_ticks32_t last_wakeup = xtimer_now();
@@ -46,6 +48,7 @@ void *sensor_thread(void *arg)
         xtimer_periodic_wakeup(&last_wakeup, period); 
         
     }
+#endif
 
     return NULL;
 }
