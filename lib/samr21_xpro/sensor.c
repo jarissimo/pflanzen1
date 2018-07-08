@@ -24,10 +24,6 @@
 
 
 int initialize_sensors(void) {
-    
-    puts("\nRIOT test for a moisture sensor\n");
-    printf("\nusing GPIO port %d, pin %d", GPIO_POWER_PORT, GPIO_POWER_PIN);
-
     /* initialize a GPIO that powers the sensor just during a measure */
     if (gpio_init(GPIO_POWER, GPIO_OUT)== 0) {
         puts("    ...[ok]");
@@ -40,8 +36,6 @@ int initialize_sensors(void) {
     /* first set LOW */  
     gpio_clear(GPIO_POWER);
     
-    /* initialize the adc device */ 
-    printf("Initializing ADC_%i @ %i bit resolution", 0, (6 + (2* RES)));
     if (adc_init(ADC_USED_LINE) == 0) {
         puts("    ...[ok]");
     }
