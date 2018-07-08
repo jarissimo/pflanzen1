@@ -89,8 +89,10 @@ void pump_set_data(int id, int data)
                 if(table[i][0]==id){
                     repeated_data = true;
                     table[i][1] = data;
-                    printf("TableUpdated \n");
-                    print_table(table);
+                    if ( PFLANZEN_DEBUG ) {
+                        printf("TableUpdated \n");
+                        print_table(table);
+                    }
                 }
             }
             if(!repeated_data){
@@ -101,8 +103,10 @@ void pump_set_data(int id, int data)
                 }
                 table[aux][0] = id;
                 table[aux][1] = data;
-                printf("AddedToTable \n");
-                print_table(table);
+                if ( PFLANZEN_DEBUG ) {
+                    printf("AddedToTable \n");
+                    print_table(table);
+                }
             }
         }
         //When we got the values of all the sensors we operate with the values
