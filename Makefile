@@ -69,7 +69,7 @@ IPV6_NETWORK ?= 0xfd9c5921b4afac01
 #XXX is this okay? is this safe? is this the best way to do this?
 CFLAGS += -DH2O_NETWORK_PREFIX="((uint64_t)$(IPV6_NETWORK)U)"
 # we need a third multicast group for this address (default is 2)
-CFLAGS += -DGNRC_NETIF_IPV6_GROUPS_NUMOF=3
+CFLAGS += -DGNRC_NETIF_IPV6_GROUPS_NUMOF=4
 
 # internal settings
 # -----------------
@@ -116,7 +116,7 @@ USEMODULE += ps
 # net
 USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
-USEMODULE += gnrc_ipv6_default
+USEMODULE += gnrc_ipv6_router_default
 USEMODULE += gnrc_icmpv6_echo
 USEMODULE += gnrc_sock_udp
 USEMODULE += gnrc_txtsnd
