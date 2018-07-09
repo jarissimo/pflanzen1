@@ -12,7 +12,7 @@
 
 #define ADC_USED_LINE               ADC_LINE(0)
 #define RES                         ADC_RES_12BIT
-#define ADC_SLEEP1                  (5)
+#define ADC_SLEEP1                  (900000)
 
 #define GPIO_POWER_PORT		        (PA)
 #define GPIO_POWER_PIN 		        (13)
@@ -53,10 +53,9 @@ int read_humidity(phydat_t *res) {
     res->scale = 0;
 
     gpio_set(GPIO_POWER);
-    xtimer_sleep(ADC_SLEEP1);
+    xtimer_usleep(ADC_SLEEP1);
 
     int measurement = adc_sample(ADC_USED_LINE, RES);
-    xtimer_sleep(ADC_SLEEP1);
     gpio_clear(GPIO_POWER);
 
     if ( PFLANZEN_DEBUG ) {

@@ -26,7 +26,6 @@ void *sensor_thread(void *arg)
             }
         }
 
-
         /* send humidity */
 
         nodeid_t to = UPSTREAM_NODE;
@@ -43,7 +42,7 @@ void *sensor_thread(void *arg)
             }
         }
 
-        /* wakes up periodically, this should get us the interval */ 
+        /* wakes up periodically, this should get us the interval */
         /* as long as it is longer as we take for our measurements */
         xtimer_periodic_wakeup(&last_wakeup, period); 
         
