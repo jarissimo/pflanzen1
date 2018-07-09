@@ -34,12 +34,21 @@ static const shell_command_t shell_commands[] = {
 int main(void)
 {
     // NODE_ID declared in global.c
-#ifdef NODE_ID_RANDOM
+#if defined(NODE_ID_RANDOM)
     // We reserve 0xff.. for special addresses
+    if ( PFLANZEN_DEBUG) {
+        puts("Setting random node id...");
+    }
     NODE_ID = (nodeid_t) random_uint32_range(1, 0xff00);
+#elif defined(NODE_ID_DEVICE)
+    NODE_ID = nodeid_from_device();
+    if ( NODE_ID == 0 ) {
+        error(0,0,"Could not set node id from device");
+        return 0;
+    }
 #else
     NODE_ID = (NODE_ID_);
-#endif /* NODE_ID_RANDOM */
+#endif
 
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
     printf("[Pflanzen 1] Welcome! I am a %s, my node ID is %04X.\n",

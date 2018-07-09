@@ -25,9 +25,9 @@ CFLAGS += -DNODE_ROLE=\"$(ROLE)\"
 CFLAGS += -DNODE_ROLE_"$(shell echo $(ROLE) | tr a-z A-Z)"
 
 # The node's id is used to identify it in data messages, and is used to
-# assign it a unique IPv6 address. If not given explicitly, a random ID
-# is generated on startup in the range (0001..feff)
-# TODO: see if we can generate this deterministically from the node's hardware
+# assign it a unique IPv6 address. If not given explicitly, a deterministic ID
+# is generated from the device's link local address in the range (0001..feff).
+# It is also possible to assign a random node ID at every startup.
 
 # reserved node IDs
 COLLECTOR_NODE_ID ?= ff01
@@ -36,10 +36,12 @@ GATEWAY_NODE_ID ?= ff99
 ifeq ($(ROLE), collector)
 	NODE_ID ?= $(COLLECTOR_NODE_ID)
 else
-	NODE_ID ?= random
+	NODE_ID ?= device
 endif
 ifeq ($(NODE_ID), random)
 	CFLAGS += -DNODE_ID_RANDOM
+else ifeq ($(NODE_ID), device)
+	CFLAGS += -DNODE_ID_DEVICE
 else
 	CFLAGS += -DNODE_ID_="(0x$(NODE_ID))"
 endif

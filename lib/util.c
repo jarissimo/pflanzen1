@@ -29,11 +29,26 @@ int shell_info ( int argc, char *argv[]) {
     printf("Node role:         %s\n", NODE_ROLE);
     printf("Node ID:           %04X\n", NODE_ID);
 
-    ipv6_addr_t addr;
-    h2op_nodeid_to_addr(NODE_ID, &addr);
-    printf("IP Address:        "); fflush(stdout);
-    ipv6_addr_print(&addr);
-    putchar('\n');
+    gnrc_netif_t *netif = NULL;
+    ipv6_addr_t addrs[GNRC_NETIF_IPV6_ADDRS_NUMOF];
+    while ( true ) {
+        netif = gnrc_netif_iter(netif);
+        if ( netif == NULL )
+            break;
+
+        rv = gnrc_netif_ipv6_addrs_get(netif, addrs,
+                GNRC_NETIF_IPV6_ADDRS_NUMOF*sizeof(ipv6_addr_t));
+        if ( rv < 0 )
+            continue;
+
+        for ( unsigned int i = 0; i < (rv/sizeof(ipv6_addr_t)); i++ ) {
+            ipv6_addr_t addr = addrs[i];
+            if ( ipv6_addr_is_global(&addr) ) {
+                printf("IP Address:        "); fflush(stdout);
+                ipv6_addr_print(&addr); putchar('\n');
+            }
+        }
+    }
 
     return 0;
 }
@@ -43,6 +58,50 @@ int shell_exit ( int argc, char *argv[]) {
     (void) argv;
 
     _exit(0);
+}
+
+nodeid_t nodeid_from_device ( void ) {
+    /* return a node id that is specific to the device, iaw it is the same every
+     * time a node is rebooted. It is ensured that 0 > nodeid > 0xff00.
+     * (Implementation detail: Currently, we just use the least significant
+     * 16 bits of the device's link local address.)
+     * On error, returns 0.
+     */
+    gnrc_netif_t *netif = NULL;
+    ipv6_addr_t addrs[GNRC_NETIF_IPV6_ADDRS_NUMOF];
+    nodeid_t nodeid;
+    if ( PFLANZEN_DEBUG) {
+        puts("Setting node id from device...");
+    }
+    while ( true ) {
+        netif = gnrc_netif_iter(netif);
+        if ( netif == NULL )
+            break;
+
+        rv = gnrc_netif_ipv6_addrs_get(netif, addrs,
+                GNRC_NETIF_IPV6_ADDRS_NUMOF*sizeof(ipv6_addr_t));
+        if ( rv < 0 )
+            continue;
+
+        for ( unsigned int i = 0; i < (rv/sizeof(ipv6_addr_t)); i++ ) {
+            ipv6_addr_t addr = addrs[i];
+            if ( ipv6_addr_is_link_local(&addr) ) {
+                nodeid = (addr.u8[14] << 8) + addr.u8[15];
+                if ( nodeid >= 0xff00 )
+                    nodeid &= 0x7fff;
+                if ( nodeid < 1 )
+                    nodeid |= 0x8000;
+
+                if ( PFLANZEN_DEBUG) {
+                    printf("Setting node ID to %04X from address: ", nodeid);
+                    fflush(stdout); ipv6_addr_print(&addr); putchar('\n');
+                }
+                return nodeid;
+            }
+        }
+    }
+    // nothing found
+    return 0;
 }
 
 // from https://stackoverflow.com/a/7776146/196244 , slightly adapted
