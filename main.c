@@ -25,6 +25,7 @@ static const shell_command_t shell_commands[] = {
     { "debug", "turn debug prints on and off", shell_debug },
     { "pump_set_data", "Send data to the pump controller", shell_pump_set_data },
     { "h2o_send_data", "send data using the h2o protocol", h2o_send_data_shell },
+    { "h2o_miv", "Set measurement interval", h2o_set_measurement_interval_shell },
     { "info", "Print information about the node", shell_info },
     { "exit", "Terminate program", shell_exit },
     { NULL, NULL, NULL },
@@ -68,6 +69,9 @@ h2op_add_receive_hook(&h2op_debug_hook);
 #endif
 #ifdef NODE_ROLE_COLLECTOR
     h2op_add_receive_hook(h2op_pump_set_data_hook);
+#endif
+#ifdef NODE_ROLE_SENSOR
+    h2op_add_receive_hook(h2op_measurement_interval_hook);
 #endif
     //TODO maybe we don't always need it?
     h2od_start();

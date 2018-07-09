@@ -19,10 +19,12 @@ typedef enum {
     H2OP_DATA_TEMPERATURE = 0x11,
     H2OP_DATA_HUMIDITY = 0x12,
     H2OP_WARN_BUCKET_EMPTY = 0x99,
+    H2OP_CONF_MEASUREMENT_INTERVAL = 0x31,
 } H2OP_MSGTYPE;
 typedef enum {
     H2OP_DATA = 0x10,
-    H2OP_WARN = 0x99,
+    H2OP_CONF = 0x30,
+    H2OP_WARN = 0x90,
 } H2OP_MSGSUPERTYPE;
 #define H2OP_MSGSUPERTYPE_MASK (0xF0)
 char* h2op_msgtype_string ( H2OP_MSGTYPE t ) {
@@ -30,6 +32,7 @@ char* h2op_msgtype_string ( H2OP_MSGTYPE t ) {
         case H2OP_DATA_TEMPERATURE: return "H2OP_DATA_TEMPERATURE";
         case H2OP_DATA_HUMIDITY: return "H2OP_DATA_HUMIDITY";
         case H2OP_WARN_BUCKET_EMPTY: return "H2OP_WARN_BUCKET_EMPTY";
+        case H2OP_CONF_MEASUREMENT_INTERVAL: return "H2OP_CONF_MEASUREMENT_INTERVAL";
         default: return NULL;
     }
 }
@@ -101,7 +104,6 @@ void add_public_address ( const gnrc_netif_t *netif ) {
 }
 
 void network_init ( bool rpl_root ){
-
     rv = gnrc_rpl_init((*gnrc_netif_iter(NULL)).pid); // just use the first if
     if ( rv < 0 ) {
         error(-rv, 0, "Error while initializing RPL");
@@ -389,6 +391,11 @@ void h2op_debug_hook (H2OP_MSGTYPE type, nodeid_t source,
             int16_t hum = ntohs(* (int16_t*) data);
             printf("Humidity: %hd\n", hum);
             return;
+        case H2OP_CONF_MEASUREMENT_INTERVAL:
+            if (len != 4) break;
+            uint32_t interval = ntohl(* (uint32_t*) data);
+            printf("Interval: %"PRIu32"\n", interval);
+            return;
         default:
             // avoid "blabla not handled in switch" error
             break;
@@ -424,6 +431,21 @@ void h2op_pump_set_data_hook (H2OP_MSGTYPE type, nodeid_t source,
     int16_t hum = ntohs(* (int16_t*) data);
 
     pump_set_data(source, hum);
+}
+
+void h2op_measurement_interval_hook (H2OP_MSGTYPE type, nodeid_t source,
+                                     uint8_t* data, size_t len) {
+    (void) source;
+
+    if ( type != H2OP_CONF_MEASUREMENT_INTERVAL ) return;
+    if ( len != 4 ) return;
+
+    uint32_t interval = ntohl(* (uint32_t*) data);
+
+    MEASUREMENT_INTERVAL = interval;
+    if ( PFLANZEN_DEBUG ) {
+        printf("Measurement interval set to %"PRIu32"\n", interval);
+    }
 }
 
 // section: shell handlers
@@ -487,3 +509,29 @@ int shell_h2od ( int argc, char *argv[]) {
     return 0;
 }
 
+int h2o_set_measurement_interval_shell (int argc, char *argv[]) {
+    if ( argc < 2 ) {
+        printf("Usage: %s usecs [node]\n", argv[0]);
+        printf("`node` defaults to current node. Use ffff for all nodes.\n");
+        return 1;
+    }
+
+    int32_t interval = strtol(argv[1], NULL, 10);
+    nodeid_t to = 0;
+    if ( argc > 2 ) {
+        to = strtoul(argv[2], NULL, 16);
+    }
+    if ( to == 0 ) {
+        to = NODE_ID; // default: only this node
+    }
+
+    uint32_t netval = htonl(interval);
+    rv = h2op_send(to, H2OP_CONF_MEASUREMENT_INTERVAL,
+              (uint8_t*) &netval, sizeof(interval), NODE_ID);
+    if ( rv <= 0 ) {
+        error(0,-rv, "could not send data");
+        return 1;
+    } else {
+        return 0;
+    }
+}
