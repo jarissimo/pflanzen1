@@ -115,6 +115,7 @@ QUIET ?= 1
 USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps
+USEMODULE += fib
 # net
 USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif

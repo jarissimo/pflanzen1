@@ -41,8 +41,10 @@ int read_humidity(phydat_t *res) {
         return -1;
     }
 
-    printf("Reading from sensor (%s|%s)\n", dev->name,
-         saul_class_to_str(dev->driver->type));
+    if ( PFLANZEN_DEBUG ) {
+        printf("Reading from sensor (%s|%s)\n", dev->name,
+             saul_class_to_str(dev->driver->type));
+    }
 
     return dim;
 }
