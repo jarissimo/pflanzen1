@@ -59,7 +59,7 @@ int read_humidity(phydat_t *res) {
     gpio_clear(GPIO_POWER);
 
     if ( PFLANZEN_DEBUG ) {
-        printf("adc sample value: %d", measurement);
+        printf("adc sample value: %d\n", measurement);
     }
 
     double value = (double) measurement;

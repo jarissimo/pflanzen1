@@ -70,9 +70,6 @@ nodeid_t nodeid_from_device ( void ) {
     gnrc_netif_t *netif = NULL;
     ipv6_addr_t addrs[GNRC_NETIF_IPV6_ADDRS_NUMOF];
     nodeid_t nodeid;
-    if ( PFLANZEN_DEBUG) {
-        puts("Setting node id from device...");
-    }
     while ( true ) {
         netif = gnrc_netif_iter(netif);
         if ( netif == NULL )
