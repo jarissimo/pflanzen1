@@ -111,10 +111,10 @@ void network_init ( bool rpl_root ){
         puts("RPL initialized.");
     }
 
+    add_public_address(NULL);
+
     if ( !rpl_root )
         return;
-
-    add_public_address(NULL);
 
     ipv6_addr_t myaddr;
     h2op_nodeid_to_addr(NODE_ID, &myaddr);
